@@ -26,5 +26,7 @@ if (process.env.NODE_ENV === "production") {
   );
 }
 
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public/landing.html")));
 app.get("/health", (req, res) => res.json({ status: "ok", time: new Date() }));
 app.listen(PORT, () => console.log(`API running on port ${PORT}`));
+
