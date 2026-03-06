@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NexVault — Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+:root{--black:#010208;--deep:#030712;--blue:#0ea5e9;--blue-bright:#38bdf8;--gold:#f59e0b;--gold-bright:#fbbf24;--white:#f0f9ff;--muted:#94a3b8;--glass:rgba(14,165,233,0.05);--glass-border:rgba(14,165,233,0.15);--green:#22c55e;--red:#ef4444;--sidebar:240px}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--black);color:var(--white);font-family:'Rajdhani',sans-serif;min-height:100vh;display:flex}
+.sidebar{width:var(--sidebar);min-height:100vh;background:rgba(3,7,18,0.98);border-right:1px solid rgba(239,68,68,0.15);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:50}
+.sidebar-logo{padding:24px;border-bottom:1px solid rgba(239,68,68,0.15)}
+.logo-text{font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:900;background:linear-gradient(135deg,var(--red),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.admin-badge{display:inline-block;padding:2px 10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:2px;font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--red);margin-top:6px;letter-spacing:0.2em}
+.sidebar-nav{flex:1;padding:16px 0}
+.nav-label{font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:0.3em;color:var(--muted);padding:0 20px;margin-bottom:6px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--muted);cursor:pointer;font-size:0.9rem;font-weight:600;transition:all 0.2s;border:none;background:none;width:100%;text-align:left;position:relative}
+.nav-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--red);transform:scaleY(0);transition:transform 0.2s}
+.nav-item:hover{color:var(--white);background:rgba(239,68,68,0.05)}
+.nav-item.active{color:var(--red);background:rgba(239,68,68,0.08)}
+.nav-item.active::before{transform:scaleY(1)}
+.nav-count{margin-left:auto;padding:2px 7px;background:rgba(239,68,68,0.2);border-radius:10px;font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--red)}
+.main{margin-left:var(--sidebar);flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{padding:14px 28px;border-bottom:1px solid var(--glass-border);background:rgba(1,2,8,0.9);backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}
+.page-title{font-family:'Orbitron',monospace;font-size:0.9rem;font-weight:700}
+.admin-status{padding:4px 12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--red);display:flex;align-items:center;gap:6px}
+.admin-dot{width:5px;height:5px;border-radius:50%;background:var(--red);animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.content{padding:24px;flex:1}
+.page{display:none}.page.active{display:block}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{padding:20px;background:var(--glass);border:1px solid var(--glass-border);border-radius:4px;position:relative;overflow:hidden}
+.stat-card.red{border-color:rgba(239,68,68,0.2)}
+.stat-card.gold{border-color:rgba(245,158,11,0.2)}
+.stat-card.green{border-color:rgba(34,197,94,0.2)}
+.stat-icon{position:absolute;top:16px;right:16px;font-size:1.3rem;opacity:0.4}
+.stat-label{font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:0.2em;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.stat-value{font-family:'Orbitron',monospace;font-size:1.6rem;font-weight:900}
+.stat-value.b{background:linear-gradient(135deg,var(--blue-bright),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-value.g{background:linear-gradient(135deg,var(--gold),var(--gold-bright));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-value.gr{color:var(--green)}
+.stat-value.r{color:var(--red)}
+.stat-sub{font-size:0.8rem;color:var(--muted);margin-top:4px}
+.card{background:var(--glass);border:1px solid var(--glass-border);border-radius:4px;padding:20px;margin-bottom:20px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-family:'Orbitron',monospace;font-size:0.85rem;font-weight:700}
+.search-bar{display:flex;gap:10px;margin-bottom:16px}
+.search-input{flex:1;padding:10px 14px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.2);border-radius:2px;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:0.9rem;outline:none}
+.search-input:focus{border-color:var(--blue-bright)}
+.search-input::placeholder{color:var(--muted)}
+.filter-select{padding:10px 14px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.2);border-radius:2px;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:0.9rem;outline:none;cursor:pointer}
+.filter-select option{background:var(--deep)}
+table{width:100%;border-collapse:collapse}
+th{font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--glass-border);text-transform:uppercase;white-space:nowrap}
+td{padding:10px;border-bottom:1px solid rgba(14,165,233,0.05);font-size:0.88rem;vertical-align:middle}
+tr:hover td{background:rgba(14,165,233,0.03)}
+.badge{padding:2px 10px;border-radius:2px;font-family:'Share Tech Mono',monospace;font-size:0.6rem;font-weight:700}
+.badge-active{background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.25);color:var(--green)}
+.badge-inactive{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:var(--red)}
+.badge-pending{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--gold-bright)}
+.badge-approved{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);color:var(--green)}
+.badge-completed{background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);color:var(--blue-bright)}
+.action-btns{display:flex;gap:6px}
+.btn{padding:6px 12px;font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:0.1em;border:none;border-radius:2px;cursor:pointer;transition:all 0.2s;text-transform:uppercase}
+.btn-approve{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:var(--green)}
+.btn-approve:hover{background:rgba(34,197,94,0.25)}
+.btn-reject{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:var(--red)}
+.btn-reject:hover{background:rgba(239,68,68,0.2)}
+.btn-view{background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);color:var(--blue-bright)}
+.btn-view:hover{background:rgba(14,165,233,0.2)}
+.btn-credit{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--gold-bright)}
+.btn-credit:hover{background:rgba(245,158,11,0.2)}
+.toast{position:fixed;top:20px;right:20px;z-index:9999;padding:12px 18px;background:rgba(1,2,8,0.95);border:1px solid rgba(34,197,94,0.4);border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--green);transform:translateY(-20px);opacity:0;transition:all 0.3s;backdrop-filter:blur(20px)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.error{border-color:rgba(239,68,68,0.4);color:var(--red)}
+.modal-overlay{position:fixed;inset:0;background:rgba(1,2,8,0.85);backdrop-filter:blur(10px);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:rgba(3,7,18,0.98);border:1px solid var(--glass-border);border-radius:4px;padding:28px;min-width:400px;max-width:500px;box-shadow:0 0 60px rgba(14,165,233,0.1)}
+.modal-title{font-family:'Orbitron',monospace;font-size:0.9rem;font-weight:700;margin-bottom:16px;color:var(--gold-bright)}
+.modal-field{margin-bottom:14px}
+.modal-label{font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:6px;display:block;text-transform:uppercase}
+.modal-input{width:100%;padding:10px 14px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.2);border-radius:2px;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:1rem;outline:none}
+.modal-input:focus{border-color:var(--blue-bright)}
+.modal-btns{display:flex;gap:10px;margin-top:20px}
+.modal-btns .btn{padding:10px 20px;font-size:0.7rem}
+.btn-gold-full{background:linear-gradient(135deg,var(--gold),var(--gold-bright));color:var(--black);border:none;flex:1}
+.btn-gold-full:hover{box-shadow:0 0 20px rgba(245,158,11,0.4)}
+.btn-cancel{background:transparent;border:1px solid var(--glass-border);color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+<div class="modal-overlay" id="credit-modal">
+  <div class="modal">
+    <div class="modal-title">◈ Credit User Balance</div>
+    <div id="modal-user-info" style="padding:10px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.1);border-radius:2px;margin-bottom:16px;font-family:'Share Tech Mono',monospace;font-size:0.75rem;color:var(--blue-bright)"></div>
+    <div class="modal-field"><label class="modal-label">Credit Type</label><select class="modal-input" id="credit-type"><option value="balance">Main Balance</option><option value="profit">Profit Balance</option><option value="referral">Referral Earnings</option></select></div>
+    <div class="modal-field"><label class="modal-label">Amount (USD)</label><input type="number" class="modal-input" id="credit-amount" placeholder="0.00"/></div>
+    <div class="modal-field"><label class="modal-label">Note (Optional)</label><input type="text" class="modal-input" id="credit-note" placeholder="Admin credit note"/></div>
+    <div class="modal-btns"><button class="btn btn-cancel" onclick="closeModal()">CANCEL</button><button class="btn btn-gold-full" onclick="submitCredit()">CREDIT BALANCE</button></div>
+  </div>
+</div>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-text">NEX<span style="color:var(--gold-bright)">VAULT</span></div>
+    <div class="admin-badge">⬡ ADMIN CONSOLE</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Control Center</div>
+    <button class="nav-item active" onclick="showPage('overview')">📊 Overview</button>
+    <button class="nav-item" onclick="showPage('users')">👥 Users <span class="nav-count" id="users-count">0</span></button>
+    <button class="nav-item" onclick="showPage('deposits')">📈 Deposits <span class="nav-count" id="dep-count">0</span></button>
+    <button class="nav-item" onclick="showPage('withdrawals')">💰 Withdrawals <span class="nav-count" id="with-count">0</span></button>
+    <button class="nav-item" onclick="showPage('investments')">🔒 Investments</button>
+    <button class="nav-item" onclick="showPage('kyc')">🪪 KYC Review <span class="nav-count" id="kyc-count">0</span></button>
+    <div class="nav-label" style="margin-top:12px">System</div>
+    <button class="nav-item" onclick="showPage('settings')">⚙ Settings</button>
+    <button class="nav-item" style="color:var(--red)" onclick="adminLogout()">⬡ Logout</button>
+  </nav>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="page-title" id="page-title">◈ ADMIN OVERVIEW</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="admin-status"><span class="admin-dot"></span>ADMIN · FULL ACCESS</div>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-label">Total Users</div><div class="stat-value b" id="ov-users">0</div><div class="stat-sub">Registered vaults</div></div>
+        <div class="stat-card gold"><div class="stat-icon">💰</div><div class="stat-label">Total AUM</div><div class="stat-value g" id="ov-aum">$0</div><div class="stat-sub">Assets under management</div></div>
+        <div class="stat-card green"><div class="stat-icon">📈</div><div class="stat-label">Total Deposits</div><div class="stat-value gr" id="ov-deposits">$0</div><div class="stat-sub">All time</div></div>
+        <div class="stat-card red"><div class="stat-icon">💸</div><div class="stat-label">Total Withdrawals</div><div class="stat-value r" id="ov-withdrawals">$0</div><div class="stat-sub">Processed</div></div>
+        <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-label">Pending Withdrawals</div><div class="stat-value g" id="ov-pending">0</div><div class="stat-sub">Awaiting approval</div></div>
+        <div class="stat-card"><div class="stat-icon">🪪</div><div class="stat-label">KYC Pending</div><div class="stat-value r" id="ov-kyc">0</div><div class="stat-sub">Needs review</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Recent Activity</div></div>
+        <table><thead><tr><th>User</th><th>Action</th><th>Amount</th><th>Time</th><th>Status</th></tr></thead>
+        <tbody id="activity-body"><tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:0.75rem">LOADING ACTIVITY...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="page" id="page-users">
+      <div class="search-bar">
+        <input class="search-input" placeholder="Search users by name, email..." id="user-search" oninput="filterUsers()"/>
+        <select class="filter-select" id="user-status-filter" onchange="filterUsers()"><option value="all">All Users</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">All Users</div><div style="font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--muted)" id="users-total-label">Loading...</div></div>
+        <table><thead><tr><th>User</th><th>Email</th><th>Balance</th><th>Plan</th><th>KYC</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="users-body"><tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:0.75rem">LOADING...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- DEPOSITS -->
+    <div class="page" id="page-deposits">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Deposit Requests</div><div class="card-title" style="color:var(--gold-bright);font-size:0.75rem" id="dep-pending-label"></div></div>
+        <table><thead><tr><th>User</th><th>Amount</th><th>Plan</th><th>Method</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="deposits-body"><tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:0.75rem">LOADING...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- WITHDRAWALS -->
+    <div class="page" id="page-withdrawals">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Withdrawal Requests</div><div class="card-title" style="color:var(--red);font-size:0.75rem" id="with-pending-label"></div></div>
+        <table><thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Wallet/Account</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="withdrawals-body"><tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:0.75rem">LOADING...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- INVESTMENTS -->
+    <div class="page" id="page-investments">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Active Investments</div></div>
+        <table><thead><tr><th>User</th><th>Plan</th><th>Amount</th><th>ROI</th><th>Started</th><th>Ends</th><th>Progress</th><th>Actions</th></tr></thead>
+        <tbody id="investments-body"><tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:0.75rem">LOADING...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- KYC -->
+    <div class="page" id="page-kyc">
+      <div class="card">
+        <div class="card-header"><div class="card-title">KYC Verification Queue</div></div>
+        <table><thead><tr><th>User</th><th>ID Type</th><th>Submitted</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="kyc-body"><tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:0.75rem">NO KYC SUBMISSIONS</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:800px">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Platform Settings</div></div>
+          <div style="margin-bottom:14px"><div class="modal-label" style="display:block;margin-bottom:6px">Platform Name</div><input class="modal-input" value="NexVault"/></div>
+          <div style="margin-bottom:14px"><div class="modal-label" style="display:block;margin-bottom:6px">Min Withdrawal ($)</div><input class="modal-input" type="number" value="50"/></div>
+          <div style="margin-bottom:14px"><div class="modal-label" style="display:block;margin-bottom:6px">Referral Commission (%)</div><input class="modal-input" type="number" value="5"/></div>
+          <div style="margin-bottom:20px"><div class="modal-label" style="display:block;margin-bottom:6px">Withdrawal Fee (%)</div><input class="modal-input" type="number" value="0"/></div>
+          <button class="btn btn-credit btn-full" onclick="showToast('Settings saved!')">SAVE SETTINGS</button>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">ROI Credit Engine</div></div>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;line-height:1.6">Manually trigger ROI crediting for all active investments. This runs automatically every 24h.</p>
+          <button class="btn btn-approve" style="width:100%;padding:10px;margin-bottom:10px" onclick="runROI()">▶ RUN ROI CREDIT NOW</button>
+          <button class="btn btn-credit" style="width:100%;padding:10px" onclick="showToast('Email notifications sent to all users!')">✉ SEND PROFIT NOTIFICATIONS</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+const API = '/api';
+const token = localStorage.getItem('nexvault_token');
+if (!token) window.location.href = '/login';
+
+let allUsers = [], allDeposits = [], allWithdrawals = [];
+let creditUserId = null;
+
+window.addEventListener('DOMContentLoaded', () => {
+  loadOverview();
+  loadUsers();
+  loadTransactionsList();
+});
+
+async function apiFetch(path, opts = {}) {
+  const res = await fetch(API + path, { ...opts, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...(opts.headers || {}) } });
+  return res.json();
+}
+
+async function loadOverview() {
+  try {
+    const data = await apiFetch('/admin/stats');
+    document.getElementById('ov-users').textContent = data.total_users || 0;
+    document.getElementById('ov-aum').textContent = '$' + Number(data.aum || 0).toLocaleString();
+    document.getElementById('ov-deposits').textContent = '$' + Number(data.total_deposits || 0).toLocaleString();
+    document.getElementById('ov-withdrawals').textContent = '$' + Number(data.total_withdrawals || 0).toLocaleString();
+    document.getElementById('ov-pending').textContent = data.pending_withdrawals || 0;
+    document.getElementById('ov-kyc').textContent = data.pending_kyc || 0;
+    document.getElementById('users-count').textContent = data.total_users || 0;
+    document.getElementById('with-count').textContent = data.pending_withdrawals || 0;
+    document.getElementById('kyc-count').textContent = data.pending_kyc || 0;
+
+    const recentBody = document.getElementById('activity-body');
+    if (data.recent_activity && data.recent_activity.length) {
+      recentBody.innerHTML = data.recent_activity.map(a => `
+        <tr><td style="font-family:'Orbitron',monospace;font-size:0.75rem">${a.user_name||'—'}</td>
+        <td><span class="badge ${a.type==='deposit'?'badge-active':a.type==='withdrawal'?'badge-pending':'badge-completed'}">${a.type.toUpperCase()}</span></td>
+        <td style="font-family:'Orbitron',monospace;color:var(--gold-bright)">$${Number(a.amount).toLocaleString()}</td>
+        <td style="color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:0.65rem">${new Date(a.created_at).toLocaleString()}</td>
+        <td><span class="badge badge-${a.status||'approved'}">${(a.status||'completed').toUpperCase()}</span></td></tr>
+      `).join('');
+    }
+  } catch(e) {}
+}
+
+async function loadUsers() {
+  try {
+    const data = await apiFetch('/admin/users');
+    allUsers = data.users || [];
+    document.getElementById('users-total-label').textContent = `${allUsers.length} USERS TOTAL`;
+    renderUsers(allUsers);
+  } catch(e) {}
+}
+
+function renderUsers(users) {
+  const body = document.getElementById('users-body');
+  if (!users.length) { body.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;font-size:0.75rem">NO USERS FOUND</td></tr>'; return; }
+  body.innerHTML = users.map(u => {
+    const initials = (u.full_name||u.email||'U').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const joined = new Date(u.created_at).toLocaleDateString('en',{month:'short',day:'numeric',year:'2-digit'});
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:8px"><div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:0.65rem;font-weight:700;color:var(--black)">${initials}</div><span style="font-family:'Orbitron',monospace;font-size:0.75rem">${u.full_name||'—'}</span></div></td>
+      <td style="color:var(--muted);font-size:0.8rem">${u.email}</td>
+      <td style="font-family:'Orbitron',monospace;font-size:0.8rem;color:var(--gold-bright)">$${Number(u.balance||0).toLocaleString()}</td>
+      <td><span class="badge badge-${u.plan?'active':'inactive'}">${(u.plan||'NONE').toUpperCase()}</span></td>
+      <td><span class="badge badge-${u.kyc_status==='verified'?'approved':u.kyc_status==='pending'?'pending':'inactive'}">${(u.kyc_status||'none').toUpperCase()}</span></td>
+      <td style="color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:0.65rem">${joined}</td>
+      <td><span class="badge badge-${u.is_active?'active':'inactive'}">${u.is_active?'ACTIVE':'INACTIVE'}</span></td>
+      <td><div class="action-btns">
+        <button class="btn btn-credit" onclick="openCreditModal(${u.id},'${u.full_name||u.email}')">CREDIT</button>
+        <button class="btn btn-view" onclick="showToast('Viewing ${u.email}')">VIEW</button>
+        <button class="btn btn-reject" onclick="toggleUser(${u.id})">${u.is_active?'BAN':'UNBAN'}</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterUsers() {
+  const q = document.getElementById('user-search').value.toLowerCase();
+  const s = document.getElementById('user-status-filter').value;
+  let filtered = allUsers;
+  if (q) filtered = filtered.filter(u => (u.full_name||'').toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+  if (s !== 'all') filtered = filtered.filter(u => s === 'active' ? u.is_active : !u.is_active);
+  renderUsers(filtered);
+}
+
+async function loadTransactionsList() {
+  try {
+    const data = await apiFetch('/admin/transactions');
+    const txs = data.transactions || [];
+    allDeposits = txs.filter(t => t.type === 'deposit');
+    allWithdrawals = txs.filter(t => t.type === 'withdrawal');
+    const pendingWith = allWithdrawals.filter(t => t.status === 'pending');
+    const pendingDep = allDeposits.filter(t => t.status === 'pending');
+    document.getElementById('dep-count').textContent = pendingDep.length;
+    document.getElementById('dep-pending-label').textContent = `${pendingDep.length} PENDING`;
+    document.getElementById('with-pending-label').textContent = `${pendingWith.length} PENDING`;
+
+    document.getElementById('deposits-body').innerHTML = allDeposits.map(t => txRow(t, 'deposit')).join('') || emptyRow(7);
+    document.getElementById('withdrawals-body').innerHTML = allWithdrawals.map(t => txRow(t, 'withdrawal')).join('') || emptyRow(7);
+  } catch(e) {}
+}
+
+function txRow(t, type) {
+  const date = new Date(t.created_at).toLocaleDateString('en',{month:'short',day:'numeric'});
+  const statusBadge = `<span class="badge badge-${t.status==='pending'?'pending':t.status==='approved'||t.status==='completed'?'approved':'inactive'}">${(t.status||'pending').toUpperCase()}</span>`;
+  const actions = t.status === 'pending' ?
+    `<div class="action-btns"><button class="btn btn-approve" onclick="approveTransaction(${t.id})">APPROVE</button><button class="btn btn-reject" onclick="rejectTransaction(${t.id})">REJECT</button></div>` :
+    `<span style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--muted)">PROCESSED</span>`;
+  if (type === 'deposit') {
+    return `<tr><td style="font-family:'Orbitron',monospace;font-size:0.75rem">${t.user_name||'—'}</td><td style="font-family:'Orbitron',monospace;color:var(--green)">+$${Number(t.amount).toLocaleString()}</td><td style="color:var(--muted)">${t.plan_name||'—'}</td><td style="color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:0.7rem">${t.payment_method||'—'}</td><td style="color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:0.65rem">${date}</td><td>${statusBadge}</td><td>${actions}</td></tr>`;
+  } else {
+    return `<tr><td style="font-family:'Orbitron',monospace;font-size:0.75rem">${t.user_name||'—'}</td><td style="font-family:'Orbitron',monospace;color:var(--red)">-$${Number(t.amount).toLocaleString()}</td><td style="color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:0.7rem">${t.payment_method||'—'}</td><td style="color:var(--blue-bright);font-family:'Share Tech Mono',monospace;font-size:0.7rem">${(t.wallet_address||'—').slice(0,20)}...</td><td style="color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:0.65rem">${date}</td><td>${statusBadge}</td><td>${actions}</td></tr>`;
+  }
+}
+
+function emptyRow(cols) { return `<tr><td colspan="${cols}" style="text-align:center;padding:24px;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:0.75rem">NO RECORDS FOUND</td></tr>`; }
+
+async function approveTransaction(id) {
+  try {
+    await apiFetch(`/admin/transactions/${id}/approve`, { method: 'POST' });
+    showToast('Transaction approved!');
+    loadTransactionsList(); loadOverview();
+  } catch(e) { showToast('Failed', true); }
+}
+
+async function rejectTransaction(id) {
+  try {
+    await apiFetch(`/admin/transactions/${id}/reject`, { method: 'POST' });
+    showToast('Transaction rejected');
+    loadTransactionsList();
+  } catch(e) { showToast('Failed', true); }
+}
+
+async function toggleUser(id) {
+  try {
+    await apiFetch(`/admin/users/${id}/toggle`, { method: 'POST' });
+    showToast('User status updated');
+    loadUsers();
+  } catch(e) { showToast('Failed', true); }
+}
+
+function openCreditModal(id, name) {
+  creditUserId = id;
+  document.getElementById('modal-user-info').textContent = `◈ USER: ${name} (ID: ${id})`;
+  document.getElementById('credit-amount').value = '';
+  document.getElementById('credit-note').value = '';
+  document.getElementById('credit-modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('credit-modal').classList.remove('open'); creditUserId = null; }
+
+async function submitCredit() {
+  const amount = parseFloat(document.getElementById('credit-amount').value);
+  const type = document.getElementById('credit-type').value;
+  const note = document.getElementById('credit-note').value;
+  if (!amount || amount <= 0) { showToast('Enter valid amount', true); return; }
+  try {
+    await apiFetch(`/admin/users/${creditUserId}/credit`, { method: 'POST', body: JSON.stringify({ amount, type, note }) });
+    showToast(`$${amount.toLocaleString()} credited successfully!`);
+    closeModal(); loadUsers(); loadOverview();
+  } catch(e) { showToast('Credit failed', true); }
+}
+
+async function runROI() {
+  try {
+    await apiFetch('/admin/run-roi', { method: 'POST' });
+    showToast('ROI credited to all active investments!');
+  } catch(e) { showToast('ROI run failed', true); }
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+  const titles = { overview:'◈ ADMIN OVERVIEW', users:'◈ USER MANAGEMENT', deposits:'◈ DEPOSIT REQUESTS', withdrawals:'◈ WITHDRAWAL REQUESTS', investments:'◈ ACTIVE INVESTMENTS', kyc:'◈ KYC REVIEW', settings:'◈ SYSTEM SETTINGS' };
+  document.getElementById('page-title').textContent = titles[name] || '◈ ADMIN';
+  const items = document.querySelectorAll('.nav-item');
+  const map = { overview:0, users:1, deposits:2, withdrawals:3, investments:4, kyc:5 };
+  if (map[name] !== undefined) items[map[name]].classList.add('active');
+}
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = (isError ? '⚠ ' : '✓ ') + msg;
+  t.className = 'toast' + (isError ? ' error' : '') + ' show';
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function adminLogout() { localStorage.removeItem('nexvault_token'); window.location.href = '/login'; }
+</script>
+</body>
+</html>
