@@ -40,4 +40,12 @@ router.get("/setup-db", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+router.get("/setup-db/promote-admin", async (req, res) => {
+  const { email } = req.query;
+  try {
+    await pool.query("UPDATE users SET role='admin' WHERE email=$1", [email]);
+    res.json({ message: "User promoted to admin: " + email });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;
