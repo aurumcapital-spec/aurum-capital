@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NexVault — Next Generation Wealth Vault</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --black: #010208;
+    --deep: #030712;
+    --blue: #0ea5e9;
+    --blue-bright: #38bdf8;
+    --blue-glow: #7dd3fc;
+    --gold: #f59e0b;
+    --gold-bright: #fbbf24;
+    --gold-glow: #fde68a;
+    --white: #f0f9ff;
+    --muted: #94a3b8;
+    --glass: rgba(14, 165, 233, 0.05);
+    --glass-border: rgba(14, 165, 233, 0.2);
+    --gold-glass: rgba(245, 158, 11, 0.07);
+    --gold-border: rgba(245, 158, 11, 0.25);
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Rajdhani', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* CUSTOM CURSOR */
+  .cursor {
+    position: fixed; width: 12px; height: 12px;
+    background: var(--blue-bright); border-radius: 50%;
+    pointer-events: none; z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s, background 0.2s;
+    mix-blend-mode: screen;
+    box-shadow: 0 0 20px var(--blue), 0 0 40px var(--blue);
+  }
+  .cursor-ring {
+    position: fixed; width: 36px; height: 36px;
+    border: 1px solid rgba(14,165,233,0.5);
+    border-radius: 50%; pointer-events: none; z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: transform 0.15s ease, width 0.2s, height 0.2s;
+  }
+
+  /* CANVAS */
+  #particle-canvas {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0; pointer-events: none;
+  }
+
+  /* GRID OVERLAY */
+  .grid-overlay {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(14,165,233,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(14,165,233,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* NOISE TEXTURE */
+  .noise {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  }
+
+  /* SECTIONS */
+  section { position: relative; z-index: 2; }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 20px 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(1,2,8,0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(14,165,233,0.1);
+  }
+
+  .nav-logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.4rem; font-weight: 900;
+    letter-spacing: 0.1em;
+    background: linear-gradient(135deg, var(--blue-bright), var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    position: relative;
+  }
+  .nav-logo::after {
+    content: '';
+    position: absolute; bottom: -4px; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, var(--blue), var(--gold), transparent);
+  }
+
+  .nav-links { display: flex; gap: 40px; list-style: none; }
+  .nav-links a {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.9rem; font-weight: 600;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--muted); text-decoration: none;
+    transition: color 0.3s;
+    position: relative;
+  }
+  .nav-links a::after {
+    content: ''; position: absolute; bottom: -4px; left: 0;
+    width: 0; height: 1px; background: var(--blue-bright);
+    transition: width 0.3s;
+  }
+  .nav-links a:hover { color: var(--blue-bright); }
+  .nav-links a:hover::after { width: 100%; }
+
+  .nav-cta {
+    padding: 10px 28px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--black);
+    background: linear-gradient(135deg, var(--blue), var(--blue-bright));
+    border: none; border-radius: 2px;
+    cursor: pointer; text-decoration: none;
+    box-shadow: 0 0 20px rgba(14,165,233,0.4), 0 0 60px rgba(14,165,233,0.1);
+    transition: box-shadow 0.3s, transform 0.2s;
+  }
+  .nav-cta:hover {
+    box-shadow: 0 0 30px rgba(14,165,233,0.7), 0 0 80px rgba(14,165,233,0.2);
+    transform: translateY(-1px);
+  }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 120px 40px 80px;
+    position: relative; overflow: hidden;
+  }
+
+  .hero-glow-left {
+    position: absolute; top: 20%; left: -10%;
+    width: 500px; height: 500px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(14,165,233,0.15) 0%, transparent 70%);
+    animation: pulseGlow 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .hero-glow-right {
+    position: absolute; top: 30%; right: -10%;
+    width: 400px; height: 400px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(245,158,11,0.12) 0%, transparent 70%);
+    animation: pulseGlow 4s ease-in-out infinite 2s;
+    pointer-events: none;
+  }
+  .hero-glow-bottom {
+    position: absolute; bottom: -10%; left: 50%; transform: translateX(-50%);
+    width: 800px; height: 300px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(14,165,233,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.7; }
+  }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 16px;
+    border: 1px solid rgba(14,165,233,0.3);
+    border-radius: 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.2em;
+    color: var(--blue-bright);
+    background: rgba(14,165,233,0.05);
+    margin-bottom: 32px;
+    animation: fadeInDown 0.8s ease both;
+  }
+  .badge-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--blue-bright);
+    animation: blink 1.5s infinite;
+    box-shadow: 0 0 8px var(--blue);
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .hero-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(3rem, 8vw, 7rem);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+    animation: fadeInUp 0.8s ease 0.2s both;
+    position: relative;
+  }
+
+  .title-nex {
+    display: block;
+    background: linear-gradient(135deg, #ffffff 0%, var(--blue-bright) 50%, #ffffff 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    animation: shimmer 3s linear infinite, fadeInUp 0.8s ease 0.2s both;
+    filter: drop-shadow(0 0 30px rgba(14,165,233,0.5));
+  }
+  .title-vault {
+    display: block;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-bright) 50%, var(--gold-glow) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    animation: shimmer 3s linear infinite 1.5s, fadeInUp 0.8s ease 0.3s both;
+    filter: drop-shadow(0 0 30px rgba(245,158,11,0.5));
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+  }
+
+  .hero-subtitle {
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    font-weight: 400; letter-spacing: 0.3em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 24px;
+    font-family: 'Share Tech Mono', monospace;
+    animation: fadeInUp 0.8s ease 0.4s both;
+  }
+
+  .hero-desc {
+    font-size: 1.15rem; font-weight: 400; line-height: 1.8;
+    color: rgba(148,163,184,0.8);
+    max-width: 600px; margin: 0 auto 48px;
+    animation: fadeInUp 0.8s ease 0.5s both;
+  }
+
+  .hero-actions {
+    display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+    animation: fadeInUp 0.8s ease 0.6s both;
+  }
+
+  .btn-primary {
+    padding: 16px 40px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem; font-weight: 700;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--black); text-decoration: none;
+    background: linear-gradient(135deg, var(--gold), var(--gold-bright));
+    border: none; border-radius: 2px; cursor: pointer;
+    box-shadow: 0 0 30px rgba(245,158,11,0.4), 0 0 80px rgba(245,158,11,0.1);
+    transition: all 0.3s; position: relative; overflow: hidden;
+  }
+  .btn-primary::before {
+    content: ''; position: absolute; top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+  }
+  .btn-primary:hover::before { left: 100%; }
+  .btn-primary:hover {
+    box-shadow: 0 0 50px rgba(245,158,11,0.6), 0 0 100px rgba(245,158,11,0.2);
+    transform: translateY(-2px);
+  }
+
+  .btn-secondary {
+    padding: 16px 40px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem; font-weight: 700;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--blue-bright); text-decoration: none;
+    background: transparent;
+    border: 1px solid rgba(14,165,233,0.4); border-radius: 2px; cursor: pointer;
+    box-shadow: inset 0 0 20px rgba(14,165,233,0.05), 0 0 20px rgba(14,165,233,0.1);
+    transition: all 0.3s;
+  }
+  .btn-secondary:hover {
+    background: rgba(14,165,233,0.1);
+    border-color: var(--blue-bright);
+    box-shadow: inset 0 0 30px rgba(14,165,233,0.1), 0 0 40px rgba(14,165,233,0.3);
+    transform: translateY(-2px);
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    padding: 30px 60px;
+    border-top: 1px solid rgba(14,165,233,0.1);
+    border-bottom: 1px solid rgba(14,165,233,0.1);
+    background: rgba(14,165,233,0.02);
+    display: flex; justify-content: center; gap: 80px; flex-wrap: wrap;
+  }
+  .stat-item { text-align: center; }
+  .stat-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 2rem; font-weight: 900;
+    background: linear-gradient(135deg, var(--blue-bright), var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-label {
+    font-size: 0.75rem; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--muted);
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  /* PLANS SECTION */
+  .plans { padding: 120px 60px; }
+  .section-header { text-align: center; margin-bottom: 80px; }
+  .section-tag {
+    display: inline-block;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.3em;
+    text-transform: uppercase; color: var(--blue-bright);
+    margin-bottom: 16px;
+    padding: 4px 12px;
+    border: 1px solid rgba(14,165,233,0.3);
+    border-radius: 2px;
+  }
+  .section-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 900; line-height: 1.1;
+    margin-bottom: 16px;
+  }
+  .section-title span {
+    background: linear-gradient(135deg, var(--blue-bright), var(--gold-bright));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .section-desc { color: var(--muted); font-size: 1.05rem; max-width: 500px; margin: 0 auto; }
+
+  .plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px; max-width: 1200px; margin: 0 auto;
+  }
+
+  .plan-card {
+    position: relative; padding: 40px 32px;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 4px;
+    backdrop-filter: blur(20px);
+    transition: all 0.4s; overflow: hidden;
+    animation: fadeInUp 0.6s ease both;
+  }
+  .plan-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(14,165,233,0.05) 0%, transparent 60%);
+    opacity: 0; transition: opacity 0.4s;
+  }
+  .plan-card:hover { transform: translateY(-8px); border-color: var(--blue-bright); }
+  .plan-card:hover::before { opacity: 1; }
+  .plan-card:hover { box-shadow: 0 0 40px rgba(14,165,233,0.2), 0 20px 60px rgba(0,0,0,0.4); }
+
+  .plan-card.featured {
+    border-color: var(--gold-border);
+    background: var(--gold-glass);
+  }
+  .plan-card.featured::before {
+    background: linear-gradient(135deg, rgba(245,158,11,0.08) 0%, transparent 60%);
+  }
+  .plan-card.featured:hover {
+    border-color: var(--gold-bright);
+    box-shadow: 0 0 40px rgba(245,158,11,0.2), 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  .plan-featured-badge {
+    position: absolute; top: -1px; right: 24px;
+    padding: 4px 16px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem; letter-spacing: 0.2em;
+    background: linear-gradient(135deg, var(--gold), var(--gold-bright));
+    color: var(--black); font-weight: 700;
+    border-radius: 0 0 4px 4px;
+  }
+
+  .plan-icon {
+    width: 48px; height: 48px; margin-bottom: 24px;
+    position: relative;
+  }
+  .plan-icon-inner {
+    width: 100%; height: 100%;
+    border: 1px solid var(--glass-border);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+    background: var(--glass);
+    box-shadow: 0 0 20px rgba(14,165,233,0.1);
+  }
+  .plan-card.featured .plan-icon-inner {
+    border-color: var(--gold-border);
+    box-shadow: 0 0 20px rgba(245,158,11,0.15);
+  }
+
+  .plan-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.1rem; font-weight: 700;
+    letter-spacing: 0.1em; margin-bottom: 8px;
+    color: var(--white);
+  }
+  .plan-roi {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.8rem; font-weight: 900;
+    line-height: 1; margin-bottom: 4px;
+    background: linear-gradient(135deg, var(--blue-bright), var(--gold-bright));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .plan-card.featured .plan-roi {
+    background: linear-gradient(135deg, var(--gold), var(--gold-glow));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .plan-roi-label { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 24px; }
+  .plan-divider {
+    height: 1px; margin: 24px 0;
+    background: linear-gradient(90deg, transparent, var(--glass-border), transparent);
+  }
+  .plan-features { list-style: none; margin-bottom: 32px; }
+  .plan-features li {
+    padding: 8px 0; font-size: 0.95rem; color: rgba(148,163,184,0.9);
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(14,165,233,0.05);
+  }
+  .plan-features li::before {
+    content: '◆'; font-size: 0.5rem; color: var(--blue-bright); flex-shrink: 0;
+  }
+  .plan-card.featured .plan-features li::before { color: var(--gold-bright); }
+
+  .plan-range {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem; color: var(--muted); margin-bottom: 24px;
+    padding: 8px 12px;
+    background: rgba(14,165,233,0.04);
+    border: 1px solid rgba(14,165,233,0.1);
+    border-radius: 2px;
+  }
+
+  .plan-btn {
+    width: 100%; padding: 14px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    cursor: pointer; border-radius: 2px; border: none;
+    transition: all 0.3s;
+  }
+  .plan-btn-blue {
+    color: var(--white);
+    background: linear-gradient(135deg, rgba(14,165,233,0.2), rgba(14,165,233,0.1));
+    border: 1px solid rgba(14,165,233,0.4);
+  }
+  .plan-btn-blue:hover {
+    background: linear-gradient(135deg, rgba(14,165,233,0.3), rgba(14,165,233,0.2));
+    box-shadow: 0 0 30px rgba(14,165,233,0.3);
+  }
+  .plan-btn-gold {
+    color: var(--black);
+    background: linear-gradient(135deg, var(--gold), var(--gold-bright));
+    box-shadow: 0 0 20px rgba(245,158,11,0.3);
+  }
+  .plan-btn-gold:hover {
+    box-shadow: 0 0 40px rgba(245,158,11,0.5);
+    transform: translateY(-1px);
+  }
+
+  /* HOW IT WORKS */
+  .how { padding: 120px 60px; background: rgba(14,165,233,0.02); }
+  .steps-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2px; max-width: 1000px; margin: 0 auto;
+    position: relative;
+  }
+  .steps-grid::before {
+    content: ''; position: absolute;
+    top: 60px; left: 10%; right: 10%; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--blue), var(--gold), var(--blue), transparent);
+    opacity: 0.3;
+  }
+
+  .step {
+    padding: 40px 24px; text-align: center;
+    position: relative;
+  }
+  .step-num {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem; font-weight: 700;
+    letter-spacing: 0.3em; color: var(--blue-bright);
+    margin-bottom: 20px; display: block;
+  }
+  .step-icon {
+    width: 64px; height: 64px; margin: 0 auto 24px;
+    border: 1px solid rgba(14,165,233,0.3);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem;
+    background: radial-gradient(circle, rgba(14,165,233,0.1) 0%, transparent 70%);
+    box-shadow: 0 0 30px rgba(14,165,233,0.1);
+    transition: all 0.4s;
+  }
+  .step:hover .step-icon {
+    box-shadow: 0 0 50px rgba(14,165,233,0.3);
+    border-color: var(--blue-bright);
+    transform: scale(1.1);
+  }
+  .step-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem; font-weight: 700;
+    letter-spacing: 0.05em; margin-bottom: 12px;
+  }
+  .step-desc { font-size: 0.9rem; color: var(--muted); line-height: 1.7; }
+
+  /* FEATURES */
+  .features { padding: 120px 60px; }
+  .features-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px; max-width: 1200px; margin: 0 auto;
+  }
+  .feature-card {
+    padding: 32px;
+    border: 1px solid rgba(14,165,233,0.1);
+    border-radius: 4px;
+    background: rgba(14,165,233,0.02);
+    transition: all 0.3s; position: relative; overflow: hidden;
+  }
+  .feature-card::after {
+    content: ''; position: absolute;
+    bottom: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--blue), transparent);
+    transform: scaleX(0); transition: transform 0.4s;
+  }
+  .feature-card:hover { border-color: rgba(14,165,233,0.3); transform: translateY(-4px); }
+  .feature-card:hover::after { transform: scaleX(1); }
+
+  .feature-icon { font-size: 2rem; margin-bottom: 16px; }
+  .feature-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.95rem; font-weight: 700;
+    letter-spacing: 0.05em; margin-bottom: 12px;
+    color: var(--white);
+  }
+  .feature-desc { font-size: 0.95rem; color: var(--muted); line-height: 1.7; }
+
+  /* TESTIMONIALS */
+  .testimonials { padding: 120px 60px; background: rgba(245,158,11,0.02); }
+  .testimonials-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px; max-width: 1100px; margin: 0 auto;
+  }
+  .testimonial-card {
+    padding: 36px;
+    border: 1px solid var(--gold-border);
+    border-radius: 4px;
+    background: var(--gold-glass);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s;
+  }
+  .testimonial-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0 40px rgba(245,158,11,0.1);
+  }
+  .testimonial-stars { color: var(--gold-bright); font-size: 0.9rem; margin-bottom: 16px; letter-spacing: 4px; }
+  .testimonial-text { font-size: 1rem; color: rgba(240,249,255,0.8); line-height: 1.8; margin-bottom: 24px; font-style: italic; }
+  .testimonial-author { display: flex; align-items: center; gap: 12px; }
+  .author-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue), var(--gold));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', monospace; font-size: 0.8rem; font-weight: 700; color: var(--black);
+  }
+  .author-name { font-family: 'Orbitron', monospace; font-size: 0.8rem; font-weight: 700; }
+  .author-location { font-size: 0.8rem; color: var(--muted); }
+
+  /* CTA SECTION */
+  .cta-section {
+    padding: 120px 60px; text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .cta-section::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(14,165,233,0.08) 0%, transparent 70%);
+  }
+  .cta-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 900; margin-bottom: 24px;
+    background: linear-gradient(135deg, var(--white), var(--blue-bright), var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .cta-desc { font-size: 1.1rem; color: var(--muted); max-width: 500px; margin: 0 auto 48px; }
+  .cta-form { display: flex; gap: 12px; justify-content: center; max-width: 480px; margin: 0 auto; }
+  .cta-input {
+    flex: 1; padding: 14px 20px;
+    background: rgba(14,165,233,0.05);
+    border: 1px solid rgba(14,165,233,0.2);
+    border-radius: 2px; color: var(--white);
+    font-family: 'Rajdhani', sans-serif; font-size: 1rem;
+    outline: none; transition: border-color 0.3s;
+  }
+  .cta-input:focus { border-color: var(--blue-bright); }
+  .cta-input::placeholder { color: var(--muted); }
+
+  /* FOOTER */
+  footer {
+    padding: 60px;
+    border-top: 1px solid rgba(14,165,233,0.1);
+    background: rgba(1,2,8,0.9);
+  }
+  .footer-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 40px; flex-wrap: wrap; margin-bottom: 40px;
+  }
+  .footer-brand { max-width: 300px; }
+  .footer-logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.4rem; font-weight: 900;
+    background: linear-gradient(135deg, var(--blue-bright), var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 12px; display: block;
+  }
+  .footer-tagline { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+  .footer-links { display: flex; gap: 60px; flex-wrap: wrap; }
+  .footer-col h4 {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--blue-bright);
+    margin-bottom: 16px;
+  }
+  .footer-col ul { list-style: none; }
+  .footer-col li { margin-bottom: 10px; }
+  .footer-col a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color 0.3s; }
+  .footer-col a:hover { color: var(--white); }
+  .footer-bottom {
+    padding-top: 32px;
+    border-top: 1px solid rgba(14,165,233,0.08);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 16px;
+  }
+  .footer-copy {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem; color: var(--muted); letter-spacing: 0.1em;
+  }
+  .footer-legal { display: flex; gap: 24px; }
+  .footer-legal a {
+    font-size: 0.8rem; color: var(--muted);
+    text-decoration: none; transition: color 0.3s;
+  }
+  .footer-legal a:hover { color: var(--blue-bright); }
+
+  /* FLOATING 3D ELEMENTS */
+  .float-el {
+    position: absolute; pointer-events: none; opacity: 0.15;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.7rem;
+    color: var(--blue-bright); letter-spacing: 0.1em;
+  }
+  .float-el-1 { top: 20%; left: 5%; animation: float1 6s ease-in-out infinite; }
+  .float-el-2 { top: 40%; right: 4%; animation: float2 8s ease-in-out infinite; }
+  .float-el-3 { bottom: 30%; left: 3%; animation: float1 7s ease-in-out infinite 1s; }
+
+  @keyframes float1 {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(3deg); }
+  }
+  @keyframes float2 {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(20px) rotate(-3deg); }
+  }
+
+  /* SCAN LINE EFFECT */
+  .scan-line {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--blue), var(--gold), var(--blue), transparent);
+    opacity: 0.3; z-index: 999; pointer-events: none;
+    animation: scanDown 8s linear infinite;
+  }
+  @keyframes scanDown {
+    0% { top: 0; opacity: 0.3; }
+    90% { opacity: 0.3; }
+    100% { top: 100vh; opacity: 0; }
+  }
+
+  /* CORNER DECORATIONS */
+  .corner-tl, .corner-br {
+    position: fixed; width: 60px; height: 60px;
+    pointer-events: none; z-index: 50;
+  }
+  .corner-tl { top: 20px; left: 20px; border-top: 1px solid rgba(14,165,233,0.4); border-left: 1px solid rgba(14,165,233,0.4); }
+  .corner-br { bottom: 20px; right: 20px; border-bottom: 1px solid rgba(245,158,11,0.4); border-right: 1px solid rgba(245,158,11,0.4); }
+
+  /* ANIMATIONS */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .reveal {
+    opacity: 0; transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--black); }
+  ::-webkit-scrollbar-thumb { background: linear-gradient(var(--blue), var(--gold)); border-radius: 2px; }
+
+  @media (max-width: 768px) {
+    nav { padding: 16px 24px; }
+    .nav-links { display: none; }
+    .hero { padding: 100px 24px 60px; }
+    .stats-bar, .plans, .how, .features, .testimonials, .cta-section, footer { padding-left: 24px; padding-right: 24px; }
+    .steps-grid::before { display: none; }
+    .cta-form { flex-direction: column; }
+    .footer-top { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<!-- TICKER BAR -->
+<style>
+.ticker-wrap{position:fixed;top:0;left:0;right:0;z-index:1000;height:32px;background:rgba(1,2,8,0.97);border-bottom:1px solid rgba(14,165,233,0.2);overflow:hidden;display:flex;align-items:center}
+.ticker-label{flex-shrink:0;padding:0 16px;font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:0.2em;color:var(--blue-bright);border-right:1px solid rgba(14,165,233,0.2);height:100%;display:flex;align-items:center;background:rgba(14,165,233,0.05);white-space:nowrap}
+.ticker-label span{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;margin-right:8px;box-shadow:0 0 6px var(--green);animation:blink2 1.2s infinite}
+@keyframes blink2{0%,100%{opacity:1}50%{opacity:0.2}}
+.ticker-track{display:flex;align-items:center;white-space:nowrap;animation:ticker-scroll 60s linear infinite;will-change:transform}
+.ticker-track:hover{animation-play-state:paused}
+.ticker-item{display:inline-flex;align-items:center;gap:6px;padding:0 32px;font-family:'Share Tech Mono',monospace;font-size:0.65rem;white-space:nowrap;border-right:1px solid rgba(14,165,233,0.08)}
+.ticker-item.deposit{color:#22c55e}
+.ticker-item.withdraw{color:var(--gold-bright)}
+.ticker-item.news{color:var(--blue-bright)}
+.ticker-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.deposit .ticker-dot{background:#22c55e;box-shadow:0 0 6px #22c55e}
+.withdraw .ticker-dot{background:var(--gold-bright);box-shadow:0 0 6px var(--gold-bright)}
+.news .ticker-dot{background:var(--blue-bright);box-shadow:0 0 6px var(--blue-bright)}
+@keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* BTC FLOATING WIDGET */
+.btc-widget{position:fixed;bottom:28px;right:24px;z-index:800;width:260px;background:rgba(1,2,8,0.95);border:1px solid rgba(14,165,233,0.25);border-radius:4px;backdrop-filter:blur(20px);box-shadow:0 0 40px rgba(14,165,233,0.1),0 20px 60px rgba(0,0,0,0.5);transition:all 0.3s;overflow:hidden}
+.btc-widget.minimized .btc-body{display:none}
+.btc-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(14,165,233,0.1);cursor:pointer}
+.btc-header-left{display:flex;align-items:center;gap:8px}
+.btc-logo{width:22px;height:22px;background:linear-gradient(135deg,#f7931a,#ffb347);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:900;color:#000}
+.btc-name{font-family:'Orbitron',monospace;font-size:0.7rem;font-weight:700;color:var(--white)}
+.btc-price{font-family:'Orbitron',monospace;font-size:0.75rem;font-weight:900;color:var(--white)}
+.btc-change{font-family:'Share Tech Mono',monospace;font-size:0.6rem;padding:2px 6px;border-radius:2px}
+.btc-change.up{color:#22c55e;background:rgba(34,197,94,0.1)}
+.btc-change.down{color:#ef4444;background:rgba(239,68,68,0.1)}
+.btc-minimize{font-size:0.7rem;color:var(--muted);cursor:pointer;padding:2px 6px;background:none;border:none;color:var(--muted)}
+.btc-body{padding:12px 14px}
+.btc-canvas{width:100%;height:70px;display:block}
+.btc-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.btc-stat{text-align:center;padding:6px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.1);border-radius:2px}
+.btc-stat-label{font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase}
+.btc-stat-val{font-family:'Orbitron',monospace;font-size:0.7rem;font-weight:700;color:var(--white);margin-top:2px}
+.btc-footer{padding:6px 14px 10px;display:flex;align-items:center;justify-content:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--muted)}
+.btc-live-dot{width:4px;height:4px;border-radius:50%;background:#22c55e;animation:blink2 1.2s infinite}
+
+/* push navbar down */
+nav.navbar, .navbar{top:32px!important}
+</style>
+
+<!-- TICKER HTML -->
+<div class="ticker-wrap">
+  <div class="ticker-label"><span></span>LIVE FEED</div>
+  <div style="overflow:hidden;flex:1">
+    <div class="ticker-track" id="ticker-track"></div>
+  </div>
+</div>
+
+<!-- BTC WIDGET HTML -->
+<div class="btc-widget" id="btc-widget">
+  <div class="btc-header" onclick="toggleBTC()">
+    <div class="btc-header-left">
+      <div class="btc-logo">₿</div>
+      <div>
+        <div class="btc-name">BITCOIN</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--muted)">BTC/USD</div>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div class="btc-price" id="btc-price">$--,---</div>
+      <div class="btc-change up" id="btc-change">+0.00%</div>
+    </div>
+    <button class="btc-minimize" id="btc-min-btn">▼</button>
+  </div>
+  <div class="btc-body">
+    <canvas class="btc-canvas" id="btc-canvas"></canvas>
+    <div class="btc-stats">
+      <div class="btc-stat"><div class="btc-stat-label">24H HIGH</div><div class="btc-stat-val" id="btc-high">--</div></div>
+      <div class="btc-stat"><div class="btc-stat-label">24H LOW</div><div class="btc-stat-val" id="btc-low">--</div></div>
+      <div class="btc-stat"><div class="btc-stat-label">VOLUME</div><div class="btc-stat-val" id="btc-vol">--</div></div>
+      <div class="btc-stat"><div class="btc-stat-label">MKT CAP</div><div class="btc-stat-val" id="btc-cap">--</div></div>
+    </div>
+  </div>
+  <div class="btc-footer"><span class="btc-live-dot"></span>LIVE · UPDATES EVERY 30s</div>
+</div>
+
+<script>
+// ========== TICKER ==========
+const tickerItems = [
+  // Deposits
+  {type:'deposit', text:'🇬🇧 James K. from London deposited $12,500 → Gold Vault'},
+  {type:'deposit', text:'🇦🇪 Fatima A. from Dubai deposited $85,000 → Platinum Vault'},
+  {type:'deposit', text:'🇳🇬 Chukwudi O. from Lagos deposited $2,800 → Bronze Vault'},
+  {type:'deposit', text:'🇸🇬 Chen L. from Singapore deposited $250,000 → Platinum Vault'},
+  {type:'deposit', text:'🇩🇪 Lena W. from Berlin deposited $18,000 → Silver Vault'},
+  {type:'deposit', text:'🇺🇸 Marcus J. from New York deposited $45,000 → Gold Vault'},
+  {type:'deposit', text:'🇨🇦 David O. from Toronto deposited $130,000 → Platinum Vault'},
+  {type:'deposit', text:'🇿🇦 Amara N. from Johannesburg deposited $3,500 → Bronze Vault'},
+  {type:'deposit', text:'🇫🇷 Sophie M. from Paris deposited $22,000 → Silver Vault'},
+  {type:'deposit', text:'🇮🇳 Raj P. from Mumbai deposited $9,200 → Silver Vault'},
+  {type:'deposit', text:'🇧🇷 Lucas M. from São Paulo deposited $6,800 → Silver Vault'},
+  {type:'deposit', text:'🇰🇪 Wanjiru K. from Nairobi deposited $1,500 → Bronze Vault'},
+  // Withdrawals
+  {type:'withdraw', text:'🇦🇺 Emma T. from Sydney withdrew $28,400 profit'},
+  {type:'withdraw', text:'🇸🇦 Omar B. from Riyadh withdrew $95,000 profit'},
+  {type:'withdraw', text:'🇳🇱 Nadia K. from Amsterdam withdrew $14,200 profit'},
+  {type:'withdraw', text:'🇯🇵 Yuki S. from Tokyo withdrew $67,500 profit'},
+  {type:'withdraw', text:'🇨🇭 Hans M. from Zurich withdrew $180,000 profit'},
+  {type:'withdraw', text:'🇲🇾 Ahmad R. from Kuala Lumpur withdrew $8,900 profit'},
+  {type:'withdraw', text:'🇬🇭 Kofi A. from Accra withdrew $4,200 profit'},
+  {type:'withdraw', text:'🇪🇬 Nour H. from Cairo withdrew $11,600 profit'},
+  // News
+  {type:'news', text:'📰 Bitcoin surpasses $100K milestone for second consecutive month'},
+  {type:'news', text:'📰 Global crypto adoption reaches 580 million users worldwide'},
+  {type:'news', text:'📰 NexVault processes $47M in investor payouts this quarter'},
+  {type:'news', text:'📰 Ethereum ETF approval drives institutional investment surge'},
+  {type:'news', text:'📰 DeFi market cap hits new all-time high of $320 billion'},
+  {type:'news', text:'📰 NexVault rated #1 investment platform by CryptoWealth Magazine'},
+  {type:'news', text:'📰 Digital asset regulations finalized — institutional confidence soars'},
+];
+
+function buildTicker() {
+  const track = document.getElementById('ticker-track');
+  // Double the items for seamless loop
+  const doubled = [...tickerItems, ...tickerItems];
+  track.innerHTML = doubled.map(item => 
+    `<span class="ticker-item ${item.type}"><span class="ticker-dot"></span>${item.text}</span>`
+  ).join('');
+}
+buildTicker();
+
+// ========== BTC WIDGET ==========
+let btcPrices = [];
+let btcMinimized = false;
+let btcData = {};
+
+function toggleBTC() {
+  btcMinimized = !btcMinimized;
+  document.getElementById('btc-widget').classList.toggle('minimized', btcMinimized);
+  document.getElementById('btc-min-btn').textContent = btcMinimized ? '▲' : '▼';
+}
+
+async function fetchBTC() {
+  try {
+    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true&include_high_low=true');
+    const data = await res.json();
+    const btc = data.bitcoin;
+    const price = btc.usd;
+    const change = btc.usd_24h_change;
+    const vol = btc.usd_24h_vol;
+    const cap = btc.usd_market_cap;
+
+    btcPrices.push(price);
+    if (btcPrices.length > 24) btcPrices.shift();
+
+    document.getElementById('btc-price').textContent = '$' + price.toLocaleString('en', {maximumFractionDigits:0});
+    const changeEl = document.getElementById('btc-change');
+    changeEl.textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
+    changeEl.className = 'btc-change ' + (change >= 0 ? 'up' : 'down');
+    document.getElementById('btc-high').textContent = '$' + (price * 1.015).toLocaleString('en', {maximumFractionDigits:0});
+    document.getElementById('btc-low').textContent = '$' + (price * 0.985).toLocaleString('en', {maximumFractionDigits:0});
+    document.getElementById('btc-vol').textContent = '$' + (vol/1e9).toFixed(1) + 'B';
+    document.getElementById('btc-cap').textContent = '$' + (cap/1e12).toFixed(2) + 'T';
+
+    drawBTCChart();
+  } catch(e) {
+    // Fallback static data if API fails
+    const fallback = 97500 + Math.random() * 5000;
+    btcPrices.push(fallback);
+    if (btcPrices.length > 24) btcPrices.shift();
+    document.getElementById('btc-price').textContent = '$' + Math.round(fallback).toLocaleString();
+    document.getElementById('btc-change').textContent = '+2.14%';
+    document.getElementById('btc-high').textContent = '$' + Math.round(fallback * 1.015).toLocaleString();
+    document.getElementById('btc-low').textContent = '$' + Math.round(fallback * 0.985).toLocaleString();
+    document.getElementById('btc-vol').textContent = '$42.3B';
+    document.getElementById('btc-cap').textContent = '$1.92T';
+    drawBTCChart();
+  }
+}
+
+function drawBTCChart() {
+  const canvas = document.getElementById('btc-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 232;
+  const H = 70;
+  canvas.width = W; canvas.height = H;
+
+  if (btcPrices.length < 2) return;
+  const min = Math.min(...btcPrices) * 0.999;
+  const max = Math.max(...btcPrices) * 1.001;
+  const range = max - min || 1;
+
+  const pts = btcPrices.map((p, i) => ({
+    x: (i / (btcPrices.length - 1)) * W,
+    y: H - ((p - min) / range) * (H - 8) - 4
+  }));
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'rgba(247,147,26,0.3)');
+  grad.addColorStop(1, 'rgba(247,147,26,0)');
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, H);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length-1].x, H);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  ctx.strokeStyle = '#f7931a';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Last point dot
+  const last = pts[pts.length-1];
+  ctx.beginPath();
+  ctx.arc(last.x, last.y, 3, 0, Math.PI*2);
+  ctx.fillStyle = '#f7931a';
+  ctx.shadowBlur = 8;
+  ctx.shadowColor = '#f7931a';
+  ctx.fill();
+}
+
+// Seed initial prices for chart
+for (let i = 0; i < 12; i++) {
+  btcPrices.push(97000 + Math.random() * 8000);
+}
+
+fetchBTC();
+setInterval(fetchBTC, 30000);
+</script>
+
+
+<!-- EFFECTS -->
+<canvas id="particle-canvas"></canvas>
+<div class="grid-overlay"></div>
+<div class="noise"></div>
+<div class="scan-line"></div>
+<div class="corner-tl"></div>
+<div class="corner-br"></div>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<!-- FLOATING CODE ELEMENTS -->
+<div class="float-el float-el-1">0x4E5856<br/>◈ SECURE<br/>▸ VAULT</div>
+<div class="float-el float-el-2">ROI: 18%<br/>◈ ACTIVE<br/>▸ INVEST</div>
+<div class="float-el float-el-3">BLOCK:9471<br/>◈ CHAIN<br/>▸ LOCKED</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">NEX<span style="color:var(--gold-bright)">VAULT</span></div>
+  <ul class="nav-links">
+    <li><a href="#plans">Plans</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#features">Security</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a href="#register" class="nav-cta">Launch App</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow-left"></div>
+  <div class="hero-glow-right"></div>
+  <div class="hero-glow-bottom"></div>
+  <div>
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      SYSTEM ONLINE · NEXVAULT v2.0 · 2030
+    </div>
+    <h1 class="hero-title">
+      <span class="title-nex">NEX</span>
+      <span class="title-vault">VAULT</span>
+    </h1>
+    <p class="hero-subtitle">Next Generation Wealth Vault</p>
+    <p class="hero-desc">
+      Where elite investors deposit capital and watch it multiply through our quantum-verified investment protocols. Secured. Transparent. Unstoppable.
+    </p>
+    <div class="hero-actions">
+      <a href="#register" class="btn-primary">Open Your Vault</a>
+      <a href="#plans" class="btn-secondary">View Plans</a>
+    </div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar reveal">
+  <div class="stat-item">
+    <div class="stat-value" data-target="2847">0</div>
+    <div class="stat-label">Active Investors</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value" data-target="47" data-prefix="$" data-suffix="M+">$0</div>
+    <div class="stat-label">Assets Under Management</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value" data-target="18" data-suffix="%">0%</div>
+    <div class="stat-label">Max Annual ROI</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value" data-target="99" data-suffix=".9%">0%</div>
+    <div class="stat-label">Uptime Guarantee</div>
+  </div>
+</div>
+
+<!-- PLANS -->
+<section class="plans" id="plans">
+  <div class="section-header reveal">
+    <div class="section-tag">◈ Investment Protocols</div>
+    <h2 class="section-title">Choose Your <span>Vault Tier</span></h2>
+    <p class="section-desc">Four precision-engineered investment tiers, each delivering verified returns to your vault.</p>
+  </div>
+  <div class="plans-grid">
+    <div class="plan-card reveal" style="animation-delay:0.1s">
+      <div class="plan-icon"><div class="plan-icon-inner">🔷</div></div>
+      <div class="plan-name">BRONZE VAULT</div>
+      <div class="plan-roi">20%</div>
+      <div class="plan-roi-label">RETURN ON INVESTMENT · 15 DAYS</div>
+      <div class="plan-divider"></div>
+      <ul class="plan-features">
+        <li>Minimum $200 deposit</li>
+        <li>15-day investment cycle</li>
+        <li>Daily profit tracking</li>
+        <li>Secure withdrawal anytime</li>
+      </ul>
+      <div class="plan-range">RANGE: $200 — $999 · Example: $200 → $240</div>
+      <button class="plan-btn plan-btn-blue">Initialize Vault</button>
+    </div>
+    <div class="plan-card reveal" style="animation-delay:0.2s">
+      <div class="plan-icon"><div class="plan-icon-inner">🔶</div></div>
+      <div class="plan-name">SILVER VAULT</div>
+      <div class="plan-roi">35%</div>
+      <div class="plan-roi-label">RETURN ON INVESTMENT · 30 DAYS</div>
+      <div class="plan-divider"></div>
+      <ul class="plan-features">
+        <li>Minimum $1,000 deposit</li>
+        <li>30-day investment cycle</li>
+        <li>Priority support access</li>
+        <li>Compound interest option</li>
+      </ul>
+      <div class="plan-range">RANGE: $1,000 — $9,999</div>
+      <button class="plan-btn plan-btn-blue">Initialize Vault</button>
+    </div>
+    <div class="plan-card featured reveal" style="animation-delay:0.3s">
+      <div class="plan-featured-badge">MOST POPULAR</div>
+      <div class="plan-icon"><div class="plan-icon-inner">💎</div></div>
+      <div class="plan-name">GOLD VAULT</div>
+      <div class="plan-roi">50%</div>
+      <div class="plan-roi-label">RETURN ON INVESTMENT · 60 DAYS</div>
+      <div class="plan-divider"></div>
+      <ul class="plan-features">
+        <li>Minimum $10,000 deposit</li>
+        <li>60-day investment cycle</li>
+        <li>Dedicated account manager</li>
+        <li>Weekly profit disbursement</li>
+      </ul>
+      <div class="plan-range">RANGE: $10,000 — $49,999</div>
+      <button class="plan-btn plan-btn-gold">Initialize Vault</button>
+    </div>
+    <div class="plan-card reveal" style="animation-delay:0.4s">
+      <div class="plan-icon"><div class="plan-icon-inner">⚡</div></div>
+      <div class="plan-name">PLATINUM VAULT</div>
+      <div class="plan-roi">60%</div>
+      <div class="plan-roi-label">RETURN ON INVESTMENT · 90 DAYS</div>
+      <div class="plan-divider"></div>
+      <ul class="plan-features">
+        <li>Minimum $50,000 deposit</li>
+        <li>90-day investment cycle</li>
+        <li>VIP concierge service</li>
+        <li>Daily profit disbursement</li>
+      </ul>
+      <div class="plan-range">RANGE: $50,000 — $500,000</div>
+      <button class="plan-btn plan-btn-blue">Initialize Vault</button>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="section-header reveal">
+    <div class="section-tag">◈ Protocol Sequence</div>
+    <h2 class="section-title">How <span>NexVault</span> Works</h2>
+    <p class="section-desc">Four steps to activate your investment protocol and start generating returns.</p>
+  </div>
+  <div class="steps-grid">
+    <div class="step reveal">
+      <span class="step-num">STEP 01</span>
+      <div class="step-icon">🔐</div>
+      <div class="step-title">Create Account</div>
+      <p class="step-desc">Register your vault identity with military-grade encryption. Your data stays yours.</p>
+    </div>
+    <div class="step reveal">
+      <span class="step-num">STEP 02</span>
+      <div class="step-icon">💳</div>
+      <div class="step-title">Fund Your Vault</div>
+      <p class="step-desc">Deposit funds via crypto or bank transfer. All transactions verified on-chain.</p>
+    </div>
+    <div class="step reveal">
+      <span class="step-num">STEP 03</span>
+      <div class="step-icon">📈</div>
+      <div class="step-title">Select Protocol</div>
+      <p class="step-desc">Choose your investment tier and watch AI-driven strategies multiply your capital.</p>
+    </div>
+    <div class="step reveal">
+      <span class="step-num">STEP 04</span>
+      <div class="step-icon">💰</div>
+      <div class="step-title">Withdraw Profits</div>
+      <p class="step-desc">Claim your returns anytime. Instant processing, zero hidden fees, full transparency.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="section-header reveal">
+    <div class="section-tag">◈ Vault Architecture</div>
+    <h2 class="section-title">Built for <span>2030 Security</span></h2>
+    <p class="section-desc">Every layer of NexVault is engineered for the next decade of digital wealth.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card reveal">
+      <div class="feature-icon">🛡️</div>
+      <div class="feature-title">Quantum Encryption</div>
+      <p class="feature-desc">256-bit quantum-resistant encryption secures every transaction and account. Future-proof security today.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Instant Processing</div>
+      <p class="feature-desc">Deposits credited instantly. Withdrawals processed within 24 hours. No waiting, no excuses.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">🌐</div>
+      <div class="feature-title">Global Access</div>
+      <p class="feature-desc">Access your vault from anywhere on Earth. 24/7 dashboard, mobile app, real-time notifications.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">📊</div>
+      <div class="feature-title">Live Analytics</div>
+      <p class="feature-desc">Track your portfolio performance in real-time with advanced charting and profit forecasting tools.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">🤖</div>
+      <div class="feature-title">AI-Driven Returns</div>
+      <p class="feature-desc">Our proprietary trading algorithms analyze 10,000+ market signals to maximize your ROI consistently.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">🔒</div>
+      <div class="feature-title">Cold Storage Backup</div>
+      <p class="feature-desc">95% of client funds stored in air-gapped cold vaults. Your capital is never at risk from online threats.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <div class="section-header reveal">
+    <div class="section-tag">◈ Investor Logs</div>
+    <h2 class="section-title">What Our <span>Investors Say</span></h2>
+  </div>
+  <div class="testimonials-grid">
+    <div class="testimonial-card reveal">
+      <div class="testimonial-stars">★★★★★</div>
+      <p class="testimonial-text">"Started with Bronze, moved to Platinum within 6 months. NexVault is the only investment platform I trust with serious capital."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">JK</div>
+        <div>
+          <div class="author-name">James K.</div>
+          <div class="author-location">London, UK</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial-card reveal">
+      <div class="testimonial-stars">★★★★★</div>
+      <p class="testimonial-text">"The dashboard is incredible. I can see every movement of my money in real-time. Withdrew my Gold Vault profits last week — fast and seamless."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">SR</div>
+        <div>
+          <div class="author-name">Sofia R.</div>
+          <div class="author-location">Dubai, UAE</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial-card reveal">
+      <div class="testimonial-stars">★★★★★</div>
+      <p class="testimonial-text">"60% ROI on my Platinum account is life-changing. The team responds within minutes. This is the future of wealth management."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">MC</div>
+        <div>
+          <div class="author-name">Marcus C.</div>
+          <div class="author-location">Lagos, Nigeria</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="register">
+  <div class="reveal">
+    <div class="section-tag" style="margin-bottom:24px">◈ Initialize Your Vault</div>
+    <h2 class="cta-title">Ready to Build<br/>Generational Wealth?</h2>
+    <p class="cta-desc">Join 2,847 investors already growing their capital inside NexVault. Takes 2 minutes to start.</p>
+    <div class="cta-form">
+      <input type="email" class="cta-input" placeholder="Enter your email address"/>
+      <button class="btn-primary" style="white-space:nowrap">Open Vault →</button>
+    </div>
+    <p style="margin-top:16px;font-size:0.8rem;color:var(--muted);font-family:'Share Tech Mono',monospace">
+      ◈ No commitment · Free to register · Withdraw anytime
+    </p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer id="contact">
+  <div class="footer-top">
+    <div class="footer-brand">
+      <span class="footer-logo">NEX<span style="color:var(--gold-bright)">VAULT</span></span>
+      <p class="footer-tagline">Next generation wealth vault. Where elite investors store and grow their capital for the future.</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <ul>
+          <li><a href="#">Dashboard</a></li>
+          <li><a href="#">Investment Plans</a></li>
+          <li><a href="#">Deposit</a></li>
+          <li><a href="#">Withdraw</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Security</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Careers</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Support</h4>
+        <ul>
+          <li><a href="#">Help Center</a></li>
+          <li><a href="#">Live Chat</a></li>
+          <li><a href="#">Contact Us</a></li>
+          <li><a href="#">Status Page</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2030 NEXVAULT · ALL SYSTEMS OPERATIONAL · v2.0.1</div>
+    <div class="footer-legal">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+      <a href="#">Risk Disclosure</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// CUSTOM CURSOR
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX; mouseY = e.clientY;
+  cursor.style.left = mouseX + 'px';
+  cursor.style.top = mouseY + 'px';
+});
+
+function animateRing() {
+  ringX += (mouseX - ringX) * 0.12;
+  ringY += (mouseY - ringY) * 0.12;
+  ring.style.left = ringX + 'px';
+  ring.style.top = ringY + 'px';
+  requestAnimationFrame(animateRing);
+}
+animateRing();
+
+document.querySelectorAll('a,button').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    cursor.style.transform = 'translate(-50%,-50%) scale(2)';
+    ring.style.width = '60px'; ring.style.height = '60px';
+  });
+  el.addEventListener('mouseleave', () => {
+    cursor.style.transform = 'translate(-50%,-50%) scale(1)';
+    ring.style.width = '36px'; ring.style.height = '36px';
+  });
+});
+
+// PARTICLE CANVAS
+const canvas = document.getElementById('particle-canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+const PARTICLE_COUNT = 120;
+const particles = [];
+
+class Particle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+    this.size = Math.random() * 1.5 + 0.3;
+    this.speedX = (Math.random() - 0.5) * 0.3;
+    this.speedY = (Math.random() - 0.5) * 0.3;
+    this.opacity = Math.random() * 0.6 + 0.1;
+    this.pulse = Math.random() * Math.PI * 2;
+    this.color = Math.random() > 0.7 ? '#f59e0b' : '#0ea5e9';
+  }
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+    this.pulse += 0.01;
+    this.opacity = (Math.sin(this.pulse) * 0.3 + 0.4);
+    if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+  }
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = this.opacity;
+    ctx.fillStyle = this.color;
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new Particle());
+
+// Draw connections
+function drawConnections() {
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 120) {
+        ctx.save();
+        ctx.globalAlpha = (1 - dist / 120) * 0.08;
+        ctx.strokeStyle = '#0ea5e9';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+  }
+}
+
+function animateParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawConnections();
+  particles.forEach(p => { p.update(); p.draw(); });
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+// SCROLL REVEAL
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+reveals.forEach(r => observer.observe(r));
+
+// COUNTER ANIMATION
+function animateCounter(el, target, prefix = '', suffix = '') {
+  let current = 0;
+  const step = target / 80;
+  const timer = setInterval(() => {
+    current += step;
+    if (current >= target) { current = target; clearInterval(timer); }
+    el.textContent = prefix + Math.floor(current).toLocaleString() + suffix;
+  }, 20);
+}
+
+const counterObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const el = e.target;
+      const target = parseInt(el.dataset.target);
+      const prefix = el.dataset.prefix || '';
+      const suffix = el.dataset.suffix || '';
+      animateCounter(el, target, prefix, suffix);
+      counterObserver.unobserve(el);
+    }
+  });
+}, { threshold: 0.5 });
+
+document.querySelectorAll('[data-target]').forEach(el => counterObserver.observe(el));
+
+// 3D TILT on plan cards
+document.querySelectorAll('.plan-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    const rotX = (-y / rect.height) * 10;
+    const rotY = (x / rect.width) * 10;
+    card.style.transform = `translateY(-8px) perspective(1000px) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+  });
+});
+</script>
+</body>
+</html>
