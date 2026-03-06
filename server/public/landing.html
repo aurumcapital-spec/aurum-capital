@@ -722,6 +722,237 @@
 </style>
 </head>
 <body>
+<!-- TICKER BAR -->
+<style>
+.ticker-wrap{position:fixed;top:0;left:0;right:0;z-index:1000;height:32px;background:rgba(1,2,8,0.97);border-bottom:1px solid rgba(14,165,233,0.2);overflow:hidden;display:flex;align-items:center}
+.ticker-label{flex-shrink:0;padding:0 16px;font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:0.2em;color:var(--blue-bright);border-right:1px solid rgba(14,165,233,0.2);height:100%;display:flex;align-items:center;background:rgba(14,165,233,0.05);white-space:nowrap}
+.ticker-label span{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;margin-right:8px;box-shadow:0 0 6px var(--green);animation:blink2 1.2s infinite}
+@keyframes blink2{0%,100%{opacity:1}50%{opacity:0.2}}
+.ticker-track{display:flex;align-items:center;white-space:nowrap;animation:ticker-scroll 60s linear infinite;will-change:transform}
+.ticker-track:hover{animation-play-state:paused}
+.ticker-item{display:inline-flex;align-items:center;gap:6px;padding:0 32px;font-family:'Share Tech Mono',monospace;font-size:0.65rem;white-space:nowrap;border-right:1px solid rgba(14,165,233,0.08)}
+.ticker-item.deposit{color:#22c55e}
+.ticker-item.withdraw{color:var(--gold-bright)}
+.ticker-item.news{color:var(--blue-bright)}
+.ticker-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.deposit .ticker-dot{background:#22c55e;box-shadow:0 0 6px #22c55e}
+.withdraw .ticker-dot{background:var(--gold-bright);box-shadow:0 0 6px var(--gold-bright)}
+.news .ticker-dot{background:var(--blue-bright);box-shadow:0 0 6px var(--blue-bright)}
+@keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* BTC FLOATING WIDGET */
+.btc-widget{position:fixed;bottom:28px;right:24px;z-index:800;width:260px;background:rgba(1,2,8,0.95);border:1px solid rgba(14,165,233,0.25);border-radius:4px;backdrop-filter:blur(20px);box-shadow:0 0 40px rgba(14,165,233,0.1),0 20px 60px rgba(0,0,0,0.5);transition:all 0.3s;overflow:hidden}
+.btc-widget.minimized .btc-body{display:none}
+.btc-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(14,165,233,0.1);cursor:pointer}
+.btc-header-left{display:flex;align-items:center;gap:8px}
+.btc-logo{width:22px;height:22px;background:linear-gradient(135deg,#f7931a,#ffb347);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:900;color:#000}
+.btc-name{font-family:'Orbitron',monospace;font-size:0.7rem;font-weight:700;color:var(--white)}
+.btc-price{font-family:'Orbitron',monospace;font-size:0.75rem;font-weight:900;color:var(--white)}
+.btc-change{font-family:'Share Tech Mono',monospace;font-size:0.6rem;padding:2px 6px;border-radius:2px}
+.btc-change.up{color:#22c55e;background:rgba(34,197,94,0.1)}
+.btc-change.down{color:#ef4444;background:rgba(239,68,68,0.1)}
+.btc-minimize{font-size:0.7rem;color:var(--muted);cursor:pointer;padding:2px 6px;background:none;border:none;color:var(--muted)}
+.btc-body{padding:12px 14px}
+.btc-canvas{width:100%;height:70px;display:block}
+.btc-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.btc-stat{text-align:center;padding:6px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.1);border-radius:2px}
+.btc-stat-label{font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase}
+.btc-stat-val{font-family:'Orbitron',monospace;font-size:0.7rem;font-weight:700;color:var(--white);margin-top:2px}
+.btc-footer{padding:6px 14px 10px;display:flex;align-items:center;justify-content:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--muted)}
+.btc-live-dot{width:4px;height:4px;border-radius:50%;background:#22c55e;animation:blink2 1.2s infinite}
+
+/* push navbar down */
+nav.navbar, .navbar{top:32px!important}
+</style>
+
+<!-- TICKER HTML -->
+<div class="ticker-wrap">
+  <div class="ticker-label"><span></span>LIVE FEED</div>
+  <div style="overflow:hidden;flex:1">
+    <div class="ticker-track" id="ticker-track"></div>
+  </div>
+</div>
+
+<!-- BTC WIDGET HTML -->
+<div class="btc-widget" id="btc-widget">
+  <div class="btc-header" onclick="toggleBTC()">
+    <div class="btc-header-left">
+      <div class="btc-logo">₿</div>
+      <div>
+        <div class="btc-name">BITCOIN</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--muted)">BTC/USD</div>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div class="btc-price" id="btc-price">$--,---</div>
+      <div class="btc-change up" id="btc-change">+0.00%</div>
+    </div>
+    <button class="btc-minimize" id="btc-min-btn">▼</button>
+  </div>
+  <div class="btc-body">
+    <canvas class="btc-canvas" id="btc-canvas"></canvas>
+    <div class="btc-stats">
+      <div class="btc-stat"><div class="btc-stat-label">24H HIGH</div><div class="btc-stat-val" id="btc-high">--</div></div>
+      <div class="btc-stat"><div class="btc-stat-label">24H LOW</div><div class="btc-stat-val" id="btc-low">--</div></div>
+      <div class="btc-stat"><div class="btc-stat-label">VOLUME</div><div class="btc-stat-val" id="btc-vol">--</div></div>
+      <div class="btc-stat"><div class="btc-stat-label">MKT CAP</div><div class="btc-stat-val" id="btc-cap">--</div></div>
+    </div>
+  </div>
+  <div class="btc-footer"><span class="btc-live-dot"></span>LIVE · UPDATES EVERY 30s</div>
+</div>
+
+<script>
+// ========== TICKER ==========
+const tickerItems = [
+  // Deposits
+  {type:'deposit', text:'🇬🇧 James K. from London deposited $12,500 → Gold Vault'},
+  {type:'deposit', text:'🇦🇪 Fatima A. from Dubai deposited $85,000 → Platinum Vault'},
+  {type:'deposit', text:'🇳🇬 Chukwudi O. from Lagos deposited $2,800 → Bronze Vault'},
+  {type:'deposit', text:'🇸🇬 Chen L. from Singapore deposited $250,000 → Platinum Vault'},
+  {type:'deposit', text:'🇩🇪 Lena W. from Berlin deposited $18,000 → Silver Vault'},
+  {type:'deposit', text:'🇺🇸 Marcus J. from New York deposited $45,000 → Gold Vault'},
+  {type:'deposit', text:'🇨🇦 David O. from Toronto deposited $130,000 → Platinum Vault'},
+  {type:'deposit', text:'🇿🇦 Amara N. from Johannesburg deposited $3,500 → Bronze Vault'},
+  {type:'deposit', text:'🇫🇷 Sophie M. from Paris deposited $22,000 → Silver Vault'},
+  {type:'deposit', text:'🇮🇳 Raj P. from Mumbai deposited $9,200 → Silver Vault'},
+  {type:'deposit', text:'🇧🇷 Lucas M. from São Paulo deposited $6,800 → Silver Vault'},
+  {type:'deposit', text:'🇰🇪 Wanjiru K. from Nairobi deposited $1,500 → Bronze Vault'},
+  // Withdrawals
+  {type:'withdraw', text:'🇦🇺 Emma T. from Sydney withdrew $28,400 profit'},
+  {type:'withdraw', text:'🇸🇦 Omar B. from Riyadh withdrew $95,000 profit'},
+  {type:'withdraw', text:'🇳🇱 Nadia K. from Amsterdam withdrew $14,200 profit'},
+  {type:'withdraw', text:'🇯🇵 Yuki S. from Tokyo withdrew $67,500 profit'},
+  {type:'withdraw', text:'🇨🇭 Hans M. from Zurich withdrew $180,000 profit'},
+  {type:'withdraw', text:'🇲🇾 Ahmad R. from Kuala Lumpur withdrew $8,900 profit'},
+  {type:'withdraw', text:'🇬🇭 Kofi A. from Accra withdrew $4,200 profit'},
+  {type:'withdraw', text:'🇪🇬 Nour H. from Cairo withdrew $11,600 profit'},
+  // News
+  {type:'news', text:'📰 Bitcoin surpasses $100K milestone for second consecutive month'},
+  {type:'news', text:'📰 Global crypto adoption reaches 580 million users worldwide'},
+  {type:'news', text:'📰 NexVault processes $47M in investor payouts this quarter'},
+  {type:'news', text:'📰 Ethereum ETF approval drives institutional investment surge'},
+  {type:'news', text:'📰 DeFi market cap hits new all-time high of $320 billion'},
+  {type:'news', text:'📰 NexVault rated #1 investment platform by CryptoWealth Magazine'},
+  {type:'news', text:'📰 Digital asset regulations finalized — institutional confidence soars'},
+];
+
+function buildTicker() {
+  const track = document.getElementById('ticker-track');
+  // Double the items for seamless loop
+  const doubled = [...tickerItems, ...tickerItems];
+  track.innerHTML = doubled.map(item => 
+    `<span class="ticker-item ${item.type}"><span class="ticker-dot"></span>${item.text}</span>`
+  ).join('');
+}
+buildTicker();
+
+// ========== BTC WIDGET ==========
+let btcPrices = [];
+let btcMinimized = false;
+let btcData = {};
+
+function toggleBTC() {
+  btcMinimized = !btcMinimized;
+  document.getElementById('btc-widget').classList.toggle('minimized', btcMinimized);
+  document.getElementById('btc-min-btn').textContent = btcMinimized ? '▲' : '▼';
+}
+
+async function fetchBTC() {
+  try {
+    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true&include_high_low=true');
+    const data = await res.json();
+    const btc = data.bitcoin;
+    const price = btc.usd;
+    const change = btc.usd_24h_change;
+    const vol = btc.usd_24h_vol;
+    const cap = btc.usd_market_cap;
+
+    btcPrices.push(price);
+    if (btcPrices.length > 24) btcPrices.shift();
+
+    document.getElementById('btc-price').textContent = '$' + price.toLocaleString('en', {maximumFractionDigits:0});
+    const changeEl = document.getElementById('btc-change');
+    changeEl.textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
+    changeEl.className = 'btc-change ' + (change >= 0 ? 'up' : 'down');
+    document.getElementById('btc-high').textContent = '$' + (price * 1.015).toLocaleString('en', {maximumFractionDigits:0});
+    document.getElementById('btc-low').textContent = '$' + (price * 0.985).toLocaleString('en', {maximumFractionDigits:0});
+    document.getElementById('btc-vol').textContent = '$' + (vol/1e9).toFixed(1) + 'B';
+    document.getElementById('btc-cap').textContent = '$' + (cap/1e12).toFixed(2) + 'T';
+
+    drawBTCChart();
+  } catch(e) {
+    // Fallback static data if API fails
+    const fallback = 97500 + Math.random() * 5000;
+    btcPrices.push(fallback);
+    if (btcPrices.length > 24) btcPrices.shift();
+    document.getElementById('btc-price').textContent = '$' + Math.round(fallback).toLocaleString();
+    document.getElementById('btc-change').textContent = '+2.14%';
+    document.getElementById('btc-high').textContent = '$' + Math.round(fallback * 1.015).toLocaleString();
+    document.getElementById('btc-low').textContent = '$' + Math.round(fallback * 0.985).toLocaleString();
+    document.getElementById('btc-vol').textContent = '$42.3B';
+    document.getElementById('btc-cap').textContent = '$1.92T';
+    drawBTCChart();
+  }
+}
+
+function drawBTCChart() {
+  const canvas = document.getElementById('btc-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 232;
+  const H = 70;
+  canvas.width = W; canvas.height = H;
+
+  if (btcPrices.length < 2) return;
+  const min = Math.min(...btcPrices) * 0.999;
+  const max = Math.max(...btcPrices) * 1.001;
+  const range = max - min || 1;
+
+  const pts = btcPrices.map((p, i) => ({
+    x: (i / (btcPrices.length - 1)) * W,
+    y: H - ((p - min) / range) * (H - 8) - 4
+  }));
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'rgba(247,147,26,0.3)');
+  grad.addColorStop(1, 'rgba(247,147,26,0)');
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, H);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length-1].x, H);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  ctx.strokeStyle = '#f7931a';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Last point dot
+  const last = pts[pts.length-1];
+  ctx.beginPath();
+  ctx.arc(last.x, last.y, 3, 0, Math.PI*2);
+  ctx.fillStyle = '#f7931a';
+  ctx.shadowBlur = 8;
+  ctx.shadowColor = '#f7931a';
+  ctx.fill();
+}
+
+// Seed initial prices for chart
+for (let i = 0; i < 12; i++) {
+  btcPrices.push(97000 + Math.random() * 8000);
+}
+
+fetchBTC();
+setInterval(fetchBTC, 30000);
+</script>
+
 
 <!-- EFFECTS -->
 <canvas id="particle-canvas"></canvas>
@@ -806,62 +1037,62 @@
     <div class="plan-card reveal" style="animation-delay:0.1s">
       <div class="plan-icon"><div class="plan-icon-inner">🔷</div></div>
       <div class="plan-name">BRONZE VAULT</div>
-      <div class="plan-roi">5%</div>
-      <div class="plan-roi-label">RETURN ON INVESTMENT · 30 DAYS</div>
+      <div class="plan-roi">20%</div>
+      <div class="plan-roi-label">RETURN ON INVESTMENT · 15 DAYS</div>
       <div class="plan-divider"></div>
       <ul class="plan-features">
-        <li>Minimum $500 deposit</li>
-        <li>30-day investment cycle</li>
+        <li>Minimum $200 deposit</li>
+        <li>15-day investment cycle</li>
         <li>Daily profit tracking</li>
         <li>Secure withdrawal anytime</li>
       </ul>
-      <div class="plan-range">RANGE: $500 — $4,999</div>
+      <div class="plan-range">RANGE: $200 — $999 · Example: $200 → $240</div>
       <button class="plan-btn plan-btn-blue">Initialize Vault</button>
     </div>
     <div class="plan-card reveal" style="animation-delay:0.2s">
       <div class="plan-icon"><div class="plan-icon-inner">🔶</div></div>
       <div class="plan-name">SILVER VAULT</div>
-      <div class="plan-roi">8%</div>
-      <div class="plan-roi-label">RETURN ON INVESTMENT · 60 DAYS</div>
+      <div class="plan-roi">35%</div>
+      <div class="plan-roi-label">RETURN ON INVESTMENT · 30 DAYS</div>
       <div class="plan-divider"></div>
       <ul class="plan-features">
-        <li>Minimum $5,000 deposit</li>
-        <li>60-day investment cycle</li>
+        <li>Minimum $1,000 deposit</li>
+        <li>30-day investment cycle</li>
         <li>Priority support access</li>
         <li>Compound interest option</li>
       </ul>
-      <div class="plan-range">RANGE: $5,000 — $24,999</div>
+      <div class="plan-range">RANGE: $1,000 — $9,999</div>
       <button class="plan-btn plan-btn-blue">Initialize Vault</button>
     </div>
     <div class="plan-card featured reveal" style="animation-delay:0.3s">
       <div class="plan-featured-badge">MOST POPULAR</div>
       <div class="plan-icon"><div class="plan-icon-inner">💎</div></div>
       <div class="plan-name">GOLD VAULT</div>
-      <div class="plan-roi">12%</div>
-      <div class="plan-roi-label">RETURN ON INVESTMENT · 90 DAYS</div>
+      <div class="plan-roi">50%</div>
+      <div class="plan-roi-label">RETURN ON INVESTMENT · 60 DAYS</div>
       <div class="plan-divider"></div>
       <ul class="plan-features">
-        <li>Minimum $25,000 deposit</li>
-        <li>90-day investment cycle</li>
+        <li>Minimum $10,000 deposit</li>
+        <li>60-day investment cycle</li>
         <li>Dedicated account manager</li>
         <li>Weekly profit disbursement</li>
       </ul>
-      <div class="plan-range">RANGE: $25,000 — $99,999</div>
+      <div class="plan-range">RANGE: $10,000 — $49,999</div>
       <button class="plan-btn plan-btn-gold">Initialize Vault</button>
     </div>
     <div class="plan-card reveal" style="animation-delay:0.4s">
       <div class="plan-icon"><div class="plan-icon-inner">⚡</div></div>
       <div class="plan-name">PLATINUM VAULT</div>
-      <div class="plan-roi">18%</div>
-      <div class="plan-roi-label">RETURN ON INVESTMENT · 180 DAYS</div>
+      <div class="plan-roi">60%</div>
+      <div class="plan-roi-label">RETURN ON INVESTMENT · 90 DAYS</div>
       <div class="plan-divider"></div>
       <ul class="plan-features">
-        <li>Minimum $100,000 deposit</li>
-        <li>180-day investment cycle</li>
+        <li>Minimum $50,000 deposit</li>
+        <li>90-day investment cycle</li>
         <li>VIP concierge service</li>
         <li>Daily profit disbursement</li>
       </ul>
-      <div class="plan-range">RANGE: $100,000 — $999,999</div>
+      <div class="plan-range">RANGE: $50,000 — $500,000</div>
       <button class="plan-btn plan-btn-blue">Initialize Vault</button>
     </div>
   </div>
@@ -974,7 +1205,7 @@
     </div>
     <div class="testimonial-card reveal">
       <div class="testimonial-stars">★★★★★</div>
-      <p class="testimonial-text">"18% ROI on my Platinum account is life-changing. The team responds within minutes. This is the future of wealth management."</p>
+      <p class="testimonial-text">"60% ROI on my Platinum account is life-changing. The team responds within minutes. This is the future of wealth management."</p>
       <div class="testimonial-author">
         <div class="author-avatar">MC</div>
         <div>
@@ -1207,207 +1438,5 @@ document.querySelectorAll('.plan-card').forEach(card => {
   });
 });
 </script>
-
-<!-- LIVE INVESTOR NOTIFICATIONS -->
-<style>
-.notif-container {
-  position: fixed; bottom: 24px; left: 24px; z-index: 9000;
-  display: flex; flex-direction: column; gap: 10px;
-  pointer-events: none;
-}
-.notif {
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px 18px;
-  background: rgba(1, 2, 8, 0.92);
-  border: 1px solid rgba(14,165,233,0.3);
-  border-left: 3px solid var(--blue-bright);
-  border-radius: 4px;
-  backdrop-filter: blur(20px);
-  box-shadow: 0 0 30px rgba(14,165,233,0.15), 0 8px 32px rgba(0,0,0,0.4);
-  min-width: 300px; max-width: 360px;
-  transform: translateX(-120%);
-  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  pointer-events: auto;
-}
-.notif.gold-notif {
-  border-color: rgba(245,158,11,0.3);
-  border-left-color: var(--gold-bright);
-  box-shadow: 0 0 30px rgba(245,158,11,0.15), 0 8px 32px rgba(0,0,0,0.4);
-}
-.notif.show { transform: translateX(0); }
-.notif.hide { transform: translateX(-120%); }
-
-.notif-avatar {
-  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--blue), var(--gold));
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Orbitron', monospace; font-size: 0.75rem; font-weight: 700;
-  color: var(--black);
-  box-shadow: 0 0 15px rgba(14,165,233,0.3);
-}
-.notif.gold-notif .notif-avatar {
-  background: linear-gradient(135deg, var(--gold), var(--gold-bright));
-  box-shadow: 0 0 15px rgba(245,158,11,0.3);
-}
-.notif-body { flex: 1; }
-.notif-name {
-  font-family: 'Orbitron', monospace;
-  font-size: 0.75rem; font-weight: 700;
-  color: var(--white); margin-bottom: 2px;
-}
-.notif-action {
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 0.85rem; color: rgba(148,163,184,0.9);
-  line-height: 1.3;
-}
-.notif-action strong {
-  color: var(--blue-bright); font-weight: 600;
-}
-.notif.gold-notif .notif-action strong { color: var(--gold-bright); }
-.notif-time {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.6rem; color: var(--muted);
-  margin-top: 4px;
-}
-.notif-icon { font-size: 1.2rem; flex-shrink: 0; }
-.notif-close {
-  position: absolute; top: 6px; right: 8px;
-  font-size: 0.7rem; color: var(--muted);
-  cursor: pointer; background: none; border: none;
-  line-height: 1; padding: 2px 4px;
-  transition: color 0.2s;
-}
-.notif-close:hover { color: var(--white); }
-.notif { position: relative; }
-
-/* Live counter badge */
-.live-badge {
-  position: fixed; top: 90px; right: 24px; z-index: 8000;
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 16px;
-  background: rgba(1,2,8,0.9);
-  border: 1px solid rgba(14,165,233,0.2);
-  border-radius: 20px;
-  backdrop-filter: blur(20px);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.7rem; color: var(--muted);
-  box-shadow: 0 0 20px rgba(14,165,233,0.1);
-}
-.live-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: #22c55e;
-  animation: blink 1.5s infinite;
-  box-shadow: 0 0 8px #22c55e;
-}
-.live-count {
-  color: var(--blue-bright);
-  font-weight: 700;
-}
-</style>
-
-<div class="notif-container" id="notif-container"></div>
-<div class="live-badge">
-  <span class="live-dot"></span>
-  <span class="live-count" id="live-count">247</span>
-  <span>investors online</span>
-</div>
-
-<script>
-const investors = [
-  { name: "James K.", init: "JK", location: "London, UK",    plan: "Platinum Vault", amount: "$250,000", type: "deposit" },
-  { name: "Sofia R.", init: "SR", location: "Dubai, UAE",    plan: "Gold Vault",     amount: "$47,500",  type: "profit"  },
-  { name: "Marcus C.",init: "MC", location: "Lagos, NG",     plan: "Bronze Vault",   amount: "$2,500",   type: "deposit" },
-  { name: "Lena W.",  init: "LW", location: "Berlin, DE",    plan: "Silver Vault",   amount: "$12,000",  type: "deposit" },
-  { name: "David O.", init: "DO", location: "Toronto, CA",   plan: "Platinum Vault", amount: "$180,000", type: "profit"  },
-  { name: "Aisha M.", init: "AM", location: "Riyadh, SA",    plan: "Gold Vault",     amount: "$35,000",  type: "deposit" },
-  { name: "Chen L.",  init: "CL", location: "Singapore",     plan: "Platinum Vault", amount: "$500,000", type: "deposit" },
-  { name: "Yusuf A.", init: "YA", location: "Accra, GH",     plan: "Silver Vault",   amount: "$8,200",   type: "profit"  },
-  { name: "Emma T.",  init: "ET", location: "Sydney, AU",    plan: "Gold Vault",     amount: "$60,000",  type: "deposit" },
-  { name: "Raj P.",   init: "RP", location: "Mumbai, IN",    plan: "Bronze Vault",   amount: "$1,800",   type: "deposit" },
-  { name: "Fatima H.",init: "FH", location: "Cairo, EG",     plan: "Silver Vault",   amount: "$15,500",  type: "profit"  },
-  { name: "Lucas M.", init: "LM", location: "São Paulo, BR", plan: "Gold Vault",     amount: "$28,000",  type: "deposit" },
-  { name: "Nadia K.", init: "NK", location: "Paris, FR",     plan: "Platinum Vault", amount: "$320,000", type: "profit"  },
-  { name: "Omar B.",  init: "OB", location: "Casablanca, MA",plan: "Bronze Vault",   amount: "$3,000",   type: "deposit" },
-  { name: "Priya S.", init: "PS", location: "New York, US",  plan: "Gold Vault",     amount: "$75,000",  type: "deposit" },
-];
-
-const timeAgo = ["just now", "1m ago", "2m ago", "3m ago", "5m ago"];
-let notifQueue = [];
-let activeNotifs = 0;
-const MAX_NOTIFS = 3;
-
-function createNotif(investor) {
-  const isGold = investor.plan.includes("Gold") || investor.plan.includes("Platinum");
-  const isProfit = investor.type === "profit";
-  const action = isProfit
-    ? `withdrew <strong>${investor.amount}</strong> profit from ${investor.plan}`
-    : `just invested <strong>${investor.amount}</strong> in ${investor.plan}`;
-  const icon = isProfit ? "💰" : "📈";
-  const time = timeAgo[Math.floor(Math.random() * timeAgo.length)];
-
-  const el = document.createElement("div");
-  el.className = "notif" + (isGold ? " gold-notif" : "");
-  el.innerHTML = `
-    <div class="notif-avatar">${investor.init}</div>
-    <div class="notif-body">
-      <div class="notif-name">${investor.name} · ${investor.location}</div>
-      <div class="notif-action">${action}</div>
-      <div class="notif-time">◈ ${time}</div>
-    </div>
-    <span class="notif-icon">${icon}</span>
-    <button class="notif-close" onclick="this.parentElement.remove()">✕</button>
-  `;
-  return el;
-}
-
-function showNotif() {
-  if (activeNotifs >= MAX_NOTIFS) return;
-  const container = document.getElementById("notif-container");
-  const investor = investors[Math.floor(Math.random() * investors.length)];
-  const el = createNotif(investor);
-  container.appendChild(el);
-  activeNotifs++;
-
-  // Animate in
-  setTimeout(() => el.classList.add("show"), 50);
-
-  // Auto remove after 5 seconds
-  setTimeout(() => {
-    el.classList.remove("show");
-    el.classList.add("hide");
-    setTimeout(() => { el.remove(); activeNotifs--; }, 600);
-  }, 5000);
-}
-
-// Live counter fluctuation
-function fluctuateLiveCount() {
-  const el = document.getElementById("live-count");
-  let base = 247;
-  setInterval(() => {
-    base += Math.floor(Math.random() * 5) - 2;
-    if (base < 230) base = 230;
-    if (base > 280) base = 280;
-    el.textContent = base;
-  }, 8000);
-}
-
-// Show first notification after 3 seconds, then every 10-15 seconds
-setTimeout(() => {
-  showNotif();
-  setInterval(() => {
-    showNotif();
-  }, Math.random() * 5000 + 10000); // 10-15 seconds
-}, 3000);
-
-// Second stream slightly offset
-setTimeout(() => {
-  setInterval(() => {
-    showNotif();
-  }, Math.random() * 5000 + 12000);
-}, 8000);
-
-fluctuateLiveCount();
-</script>
-
 </body>
 </html>
