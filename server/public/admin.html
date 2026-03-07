@@ -116,8 +116,6 @@ tr:hover td{background:rgba(14,165,233,0.03)}
     <button class="nav-item" onclick="showPage('investments')">🔒 Investments</button>
     <button class="nav-item" onclick="showPage('kyc')">🪪 KYC Review <span class="nav-count" id="kyc-count">0</span></button>
     <div class="nav-label" style="margin-top:12px">System</div>
-    
-<button class="nav-item" onclick="showPage('wallets')">💳 Wallet Addresses</button>
     <button class="nav-item" onclick="showPage('settings')">⚙ Settings</button>
     <button class="nav-item" style="color:var(--red)" onclick="adminLogout()">⬡ Logout</button>
   </nav>
@@ -198,45 +196,6 @@ tr:hover td{background:rgba(14,165,233,0.03)}
       </div>
     </div>
 
-        <!-- WALLETS PAGE -->
-    <div class="page" id="page-wallets">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px">
-        <div class="card">
-          <div class="card-header"><div class="card-title">ADD WALLET ADDRESS</div></div>
-          <p style="font-size:0.85rem;color:#94a3b8;margin-bottom:16px">Add wallet addresses shown to users when depositing.</p>
-          <div style="margin-bottom:14px">
-            <label style="display:block;font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:#94a3b8;margin-bottom:6px">PAYMENT METHOD</label>
-            <select id="w-method" style="width:100%;padding:10px 14px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.2);border-radius:2px;color:#f0f9ff;font-size:0.9rem;outline:none">
-              <option value="btc">Bitcoin (BTC)</option>
-              <option value="eth">Ethereum (ETH)</option>
-              <option value="usdt">USDT (TRC20)</option>
-              <option value="usdt_erc20">USDT (ERC20)</option>
-              <option value="bnb">BNB</option>
-              <option value="bank">Bank Transfer</option>
-            </select>
-          </div>
-          <div style="margin-bottom:14px">
-            <label style="display:block;font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:#94a3b8;margin-bottom:6px">LABEL</label>
-            <input id="w-label" style="width:100%;padding:10px 14px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.2);border-radius:2px;color:#f0f9ff;font-size:0.9rem;outline:none" placeholder="e.g. BTC Main Wallet"/>
-          </div>
-          <div style="margin-bottom:14px">
-            <label style="display:block;font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:#94a3b8;margin-bottom:6px">WALLET ADDRESS</label>
-            <input id="w-address" style="width:100%;padding:10px 14px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.2);border-radius:2px;color:#f0f9ff;font-size:0.9rem;outline:none" placeholder="Enter full wallet address"/>
-          </div>
-          <div style="margin-bottom:20px">
-            <label style="display:block;font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:#94a3b8;margin-bottom:6px">NETWORK (optional)</label>
-            <input id="w-network" style="width:100%;padding:10px 14px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.2);border-radius:2px;color:#f0f9ff;font-size:0.9rem;outline:none" placeholder="e.g. TRC20, ERC20, BEP20"/>
-          </div>
-          <button onclick="addWallet()" style="width:100%;padding:14px;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#010208;font-family:'Share Tech Mono',monospace;font-size:0.75rem;font-weight:700;letter-spacing:0.15em;border:none;border-radius:2px;cursor:pointer">+ ADD WALLET ADDRESS</button>
-        </div>
-        <div class="card">
-          <div class="card-header"><div class="card-title">ACTIVE WALLETS</div></div>
-          <div id="wallets-list">
-            <div style="text-align:center;padding:32px;color:#94a3b8;font-family:'Share Tech Mono',monospace;font-size:0.75rem">LOADING...</div>
-          </div>
-        </div>
-      </div>
-    </div>
     <!-- SETTINGS -->
     <div class="page" id="page-settings">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:800px">
@@ -431,56 +390,7 @@ async function runROI() {
   } catch(e) { showToast('ROI run failed', true); }
 }
 
-
-async function loadWallets() {
-  try {
-    const data = await apiFetch('/admin/wallets');
-    const wallets = data.wallets || [];
-    const el = document.getElementById('wallets-list');
-    if (!wallets.length) { el.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;font-family:\'Share Tech Mono\',monospace;font-size:0.75rem">NO WALLETS YET — ADD ONE</div>'; return; }
-    const icons = {btc:'₿',eth:'Ξ',usdt:'₮',usdt_erc20:'₮',bnb:'B',bank:'🏦'};
-    el.innerHTML = wallets.map(w => `
-      <div style="padding:14px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.15);border-radius:4px;margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-          <span style="font-size:1.3rem">${icons[w.method]||'💳'}</span>
-          <div style="flex:1">
-            <div style="font-family:'Orbitron',monospace;font-size:0.75rem;font-weight:700">${w.label}</div>
-            <div style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:#94a3b8">${w.method.toUpperCase()}${w.network?' · '+w.network:''}</div>
-          </div>
-          <span style="padding:2px 8px;font-family:'Share Tech Mono',monospace;font-size:0.6rem;background:${w.is_active?'rgba(34,197,94,0.1)':'rgba(239,68,68,0.1)'};border:1px solid ${w.is_active?'rgba(34,197,94,0.3)':'rgba(239,68,68,0.3)'};color:${w.is_active?'#22c55e':'#ef4444'};border-radius:2px">${w.is_active?'ACTIVE':'OFF'}</span>
-        </div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:#38bdf8;word-break:break-all;padding:8px;background:rgba(14,165,233,0.05);border-radius:2px;margin-bottom:8px">${w.address}</div>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-view" onclick="navigator.clipboard.writeText('${w.address}').then(()=>showToast('Copied!'))">COPY</button>
-          <button class="btn btn-reject" onclick="deleteWallet(${w.id})">DELETE</button>
-        </div>
-      </div>`).join('');
-  } catch(e) { console.error(e); document.getElementById('wallets-list').innerHTML = '<div style="color:#ef4444;padding:20px;font-family:\'Share Tech Mono\',monospace;font-size:0.75rem">ERROR LOADING WALLETS</div>'; }
-}
-
-async function addWallet() {
-  const method = document.getElementById('w-method').value;
-  const label = document.getElementById('w-label').value || method.toUpperCase();
-  const address = document.getElementById('w-address').value.trim();
-  const network = document.getElementById('w-network').value.trim();
-  if (!address) { showToast('Enter a wallet address', true); return; }
-  try {
-    await apiFetch('/admin/wallets', {method:'POST', body: JSON.stringify({method, label, address, network})});
-    showToast('Wallet added successfully!');
-    document.getElementById('w-address').value = '';
-    document.getElementById('w-label').value = '';
-    document.getElementById('w-network').value = '';
-    loadWallets();
-  } catch(e) { showToast('Failed to add wallet', true); }
-}
-
-async function deleteWallet(id) {
-  if (!confirm('Delete this wallet address?')) return;
-  try { await apiFetch('/admin/wallets/'+id, {method:'DELETE'}); showToast('Wallet deleted'); loadWallets(); }
-  catch(e) { showToast('Failed', true); }
-}
 function showPage(name) {
-  if (name === 'wallets') setTimeout(loadWallets, 100);
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById(`page-${name}`).classList.add('active');
