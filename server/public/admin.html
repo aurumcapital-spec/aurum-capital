@@ -116,6 +116,8 @@ tr:hover td{background:rgba(14,165,233,0.03)}
     <button class="nav-item" onclick="showPage('investments')">🔒 Investments</button>
     <button class="nav-item" onclick="showPage('kyc')">🪪 KYC Review <span class="nav-count" id="kyc-count">0</span></button>
     <div class="nav-label" style="margin-top:12px">System</div>
+    <button class="nav-item" id="nav-chat" onclick="showPage('chat')">💬 Live Chat <span class="nav-count" id="chat-nav-count" style="display:none">0</span></button>
+    <button class="nav-item" onclick="showPage('wallets')">💳 Wallet Addresses</button>
     <button class="nav-item" onclick="showPage('settings')">⚙ Settings</button>
     <button class="nav-item" style="color:var(--red)" onclick="adminLogout()">⬡ Logout</button>
   </nav>
@@ -212,6 +214,8 @@ tr:hover td{background:rgba(14,165,233,0.03)}
     </div>
   </div>
 </div>
+<div class="page" id="page-chat"><div style="display:grid;grid-template-columns:280px 1fr;gap:0;height:calc(100vh - 120px);border:1px solid rgba(14,165,233,0.15);border-radius:4px;overflow:hidden"><div style="background:rgba(14,165,233,0.02);border-right:1px solid rgba(14,165,233,0.1);display:flex;flex-direction:column"><div style="padding:14px 16px;border-bottom:1px solid rgba(14,165,233,0.1);font-family:Orbitron,monospace;font-size:0.75rem;font-weight:700;display:flex;align-items:center;gap:8px">💬 CONVERSATIONS<span id="online-count" style="margin-left:auto;padding:2px 8px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:10px;font-family:monospace;font-size:0.6rem;color:#22c55e">0 online</span></div><div id="chat-list" style="flex:1;overflow-y:auto;padding:8px"><div style="text-align:center;padding:32px;color:#94a3b8;font-family:monospace;font-size:0.7rem">No conversations yet</div></div></div><div style="display:flex;flex-direction:column"><div id="admin-chat-header" style="padding:14px 18px;border-bottom:1px solid rgba(14,165,233,0.1);font-family:monospace;font-size:0.75rem;color:#94a3b8">Select a conversation</div><div id="admin-chat-msgs" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px"></div><div style="padding:12px 16px;border-top:1px solid rgba(14,165,233,0.1);display:flex;gap:10px"><input id="admin-chat-input" disabled placeholder="Select a conversation to reply..." style="flex:1;padding:10px 14px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.15);border-radius:20px;color:#f0f9ff;font-size:0.9rem;outline:none" onkeydown="if(event.key===chr(39)Enter chr(39))adminSendMsg()"/><button onclick="adminSendMsg()" style="padding:8px 18px;background:linear-gradient(135deg,#0ea5e9,#38bdf8);border:none;border-radius:20px;color:#010208;font-family:monospace;font-size:0.65rem;cursor:pointer;font-weight:700">SEND</button></div></div></div></div>
+<div class="page" id="page-wallets"><div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px"><div class="card"><div class="card-header"><div class="card-title">ADD WALLET ADDRESS</div></div><p style="font-size:0.85rem;color:#94a3b8;margin-bottom:16px">Add wallet addresses shown to users when depositing.</p><div style="margin-bottom:14px"><label style="display:block;font-family:monospace;font-size:0.65rem;color:#94a3b8;margin-bottom:6px">PAYMENT METHOD</label><select id="w-method" style="width:100%;padding:10px 14px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.2);border-radius:2px;color:#f0f9ff;font-size:0.9rem;outline:none"><option value="btc">Bitcoin (BTC)</option><option value="eth">Ethereum (ETH)</option><option value="usdt">USDT (TRC20)</option><option value="usdt_erc20">USDT (ERC20)</option><option value="bnb">BNB</option><option value="bank">Bank Transfer</option></select></div><div style="margin-bottom:14px"><label style="display:block;font-family:monospace;font-size:0.65rem;color:#94a3b8;margin-bottom:6px">LABEL</label><input id="w-label" style="width:100%;padding:10px 14px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.2);border-radius:2px;color:#f0f9ff;font-size:0.9rem;outline:none" placeholder="e.g. BTC Main Wallet"/></div><div style="margin-bottom:14px"><label style="display:block;font-family:monospace;font-size:0.65rem;color:#94a3b8;margin-bottom:6px">WALLET ADDRESS</label><input id="w-address" style="width:100%;padding:10px 14px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.2);border-radius:2px;color:#f0f9ff;font-size:0.9rem;outline:none" placeholder="Enter full wallet address"/></div><div style="margin-bottom:20px"><label style="display:block;font-family:monospace;font-size:0.65rem;color:#94a3b8;margin-bottom:6px">NETWORK (optional)</label><input id="w-network" style="width:100%;padding:10px 14px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.2);border-radius:2px;color:#f0f9ff;font-size:0.9rem;outline:none" placeholder="e.g. TRC20, ERC20"/></div><button onclick="addWallet()" style="width:100%;padding:14px;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#010208;font-family:monospace;font-size:0.75rem;font-weight:700;letter-spacing:0.15em;border:none;border-radius:2px;cursor:pointer">+ ADD WALLET ADDRESS</button></div><div class="card"><div class="card-header"><div class="card-title">ACTIVE WALLETS</div></div><div id="wallets-list"><div style="text-align:center;padding:32px;color:#94a3b8;font-family:monospace;font-size:0.75rem">LOADING...</div></div></div></div></div>
 <!-- SETTINGS -->
     <div class="page" id="page-settings">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:800px">
@@ -407,6 +411,8 @@ async function runROI() {
 }
 
 function showPage(name) {
+  if(name==="wallets")setTimeout(loadWallets,100);
+  if(name==="chat"){document.getElementById("chat-nav-count").style.display="none";}
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById(`page-${name}`).classList.add('active');
@@ -482,6 +488,99 @@ function adminSendMsg(){
   adminSocket.emit('admin_message',{userId:activeChatUser,text});inp.value='';
 }
 window.addEventListener('load',()=>setTimeout(initAdminChat,500));
+</script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// WALLET FUNCTIONS
+async function loadWallets(){
+  try{
+    const data=await apiFetch("/admin/wallets");
+    const wallets=data.wallets||[];
+    const el=document.getElementById("wallets-list");
+    if(!wallets.length){el.innerHTML='<div style="text-align:center;padding:32px;color:#94a3b8;font-family:monospace;font-size:0.75rem">NO WALLETS YET</div>';return;}
+    const icons={btc:"₿",eth:"Ξ",usdt:"₮",usdt_erc20:"₮",bnb:"B",bank:"🏦"};
+    el.innerHTML=wallets.map(w=>`<div style="padding:14px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.15);border-radius:4px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="font-size:1.3rem">${icons[w.method]||"💳"}</span><div style="flex:1"><div style="font-family:Orbitron,monospace;font-size:0.75rem;font-weight:700">${w.label}</div><div style="font-family:monospace;font-size:0.6rem;color:#94a3b8">${w.method.toUpperCase()}${w.network?" · "+w.network:""}</div></div><span style="padding:2px 8px;font-family:monospace;font-size:0.6rem;background:${w.is_active?"rgba(34,197,94,0.1)":"rgba(239,68,68,0.1)"};border:1px solid ${w.is_active?"rgba(34,197,94,0.3)":"rgba(239,68,68,0.3)"};color:${w.is_active?"#22c55e":"#ef4444"};border-radius:2px">${w.is_active?"ACTIVE":"OFF"}</span></div><div style="font-family:monospace;font-size:0.7rem;color:#38bdf8;word-break:break-all;padding:8px;background:rgba(14,165,233,0.05);border-radius:2px;margin-bottom:8px">${w.address}</div><div style="display:flex;gap:6px"><button class="btn btn-view" onclick="navigator.clipboard.writeText('${w.address}').then(()=>showToast('Copied!'))">COPY</button><button class="btn btn-reject" onclick="deleteWallet(${w.id})">DELETE</button></div></div>`).join("");
+  }catch(e){document.getElementById("wallets-list").innerHTML='<div style="color:#ef4444;padding:20px;font-family:monospace">ERROR LOADING</div>';}
+}
+async function addWallet(){
+  const method=document.getElementById("w-method").value;
+  const label=document.getElementById("w-label").value||method.toUpperCase();
+  const address=document.getElementById("w-address").value.trim();
+  const network=document.getElementById("w-network").value.trim();
+  if(!address){showToast("Enter a wallet address",true);return;}
+  try{
+    await apiFetch("/admin/wallets",{method:"POST",body:JSON.stringify({method,label,address,network})});
+    showToast("Wallet added!");
+    document.getElementById("w-address").value="";
+    document.getElementById("w-label").value="";
+    document.getElementById("w-network").value="";
+    loadWallets();
+  }catch(e){showToast("Failed",true);}
+}
+async function deleteWallet(id){
+  if(!confirm("Delete this wallet?"))return;
+  try{await apiFetch("/admin/wallets/"+id,{method:"DELETE"});showToast("Deleted");loadWallets();}
+  catch(e){showToast("Failed",true);}
+}
+
+// CHAT FUNCTIONS
+let adminSocket=null,activeChatUser=null,chatConvos={},onlineUsrs=new Set();
+function initAdminChat(){
+  const token=localStorage.getItem("nx_token");if(!token)return;
+  adminSocket=io({auth:{token}});
+  adminSocket.on("chat_list",(list)=>{list.forEach(c=>{chatConvos[c.userId]=c.messages||[];});renderChatList();});
+  adminSocket.on("new_message",(data)=>{
+    if(!chatConvos[data.userId])chatConvos[data.userId]=[];
+    chatConvos[data.userId].push(data.message);renderChatList();
+    if(activeChatUser==data.userId){appendAdminMsg(data.message);adminSocket.emit("mark_read",{userId:data.userId});}
+    else{const total=Object.values(chatConvos).reduce((a,ms)=>a+ms.filter(m=>!m.read&&m.from!=="admin").length,0);const b=document.getElementById("chat-nav-count");if(total>0){b.style.display="flex";b.textContent=total;}showToast("New message from "+data.userName);}
+  });
+  adminSocket.on("message_sent",(data)=>{if(activeChatUser==data.userId)appendAdminMsg(data.message);});
+  adminSocket.on("user_online",(data)=>{onlineUsrs.add(String(data.userId));document.getElementById("online-count").textContent=onlineUsrs.size+" online";renderChatList();});
+  adminSocket.on("user_offline",(data)=>{onlineUsrs.delete(String(data.userId));document.getElementById("online-count").textContent=onlineUsrs.size+" online";renderChatList();});
+}
+function renderChatList(){
+  const el=document.getElementById("chat-list");
+  const users=Object.keys(chatConvos);
+  if(!users.length){el.innerHTML='<div style="text-align:center;padding:32px;color:#94a3b8;font-family:monospace;font-size:0.7rem">No conversations</div>';return;}
+  el.innerHTML=users.map(uid=>{
+    const msgs=chatConvos[uid]||[];const last=msgs[msgs.length-1];
+    const unread=msgs.filter(m=>!m.read&&m.from!=="admin").length;
+    const isOnline=onlineUsrs.has(String(uid));const isActive=activeChatUser==uid;
+    return '<div onclick="openChat('+uid+')" style="padding:12px;border-radius:4px;cursor:pointer;margin-bottom:4px;background:'+(isActive?"rgba(14,165,233,0.1)":"rgba(14,165,233,0.03)")+';border:1px solid '+(isActive?"rgba(14,165,233,0.25)":"transparent")+'"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="width:8px;height:8px;border-radius:50%;background:'+(isOnline?"#22c55e":"#94a3b8")+';flex-shrink:0"></span><span style="font-family:Orbitron,monospace;font-size:0.7rem;font-weight:700;flex:1">'+(last?last.userName:"User #"+uid)+'</span>'+(unread?'<span style="padding:1px 6px;background:#ef4444;border-radius:10px;font-size:0.6rem;color:#fff">'+unread+'</span>':"")+'</div><div style="font-size:0.8rem;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(last?last.text.substring(0,40):"No messages")+'</div></div>';
+  }).join("");
+}
+function openChat(userId){
+  activeChatUser=userId;const msgs=chatConvos[userId]||[];
+  document.getElementById("admin-chat-input").disabled=false;
+  document.getElementById("admin-chat-input").placeholder="Type a reply...";
+  if(adminSocket)adminSocket.emit("mark_read",{userId});
+  msgs.forEach(m=>m.read=true);
+  const lastName=msgs[msgs.length-1]?.userName||"User #"+userId;
+  const isOnline=onlineUsrs.has(String(userId));
+  document.getElementById("admin-chat-header").innerHTML='<span style="width:10px;height:10px;border-radius:50%;background:'+(isOnline?"#22c55e":"#94a3b8")+';display:inline-block;margin-right:8px"></span><strong style="font-family:Orbitron,monospace;font-size:0.8rem">'+lastName+'</strong><span style="font-family:monospace;font-size:0.65rem;color:'+(isOnline?"#22c55e":"#94a3b8")+';margin-left:8px">'+(isOnline?"ONLINE":"OFFLINE")+'</span>';
+  const c=document.getElementById("admin-chat-msgs");c.innerHTML="";
+  msgs.forEach(m=>appendAdminMsg(m,false));c.scrollTop=c.scrollHeight;renderChatList();
+  const total=Object.values(chatConvos).reduce((a,ms)=>a+ms.filter(m=>!m.read&&m.from!=="admin").length,0);
+  const b=document.getElementById("chat-nav-count");if(total>0){b.style.display="flex";b.textContent=total;}else b.style.display="none";
+}
+function appendAdminMsg(msg,scroll=true){
+  const c=document.getElementById("admin-chat-msgs");
+  const isUser=msg.from!=="admin";
+  const time=new Date(msg.time).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+  const d=document.createElement("div");
+  d.style.cssText="display:flex;flex-direction:column;max-width:70%;align-self:"+(isUser?"flex-start":"flex-end")+";align-items:"+(isUser?"flex-start":"flex-end");
+  d.innerHTML='<div style="padding:9px 13px;border-radius:12px;font-size:0.88rem;'+(isUser?"background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.15);color:#f0f9ff;border-bottom-left-radius:2px":"background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#010208;border-bottom-right-radius:2px")+'">'+msg.text+'</div><div style="font-family:monospace;font-size:0.55rem;color:#94a3b8;margin-top:2px">'+(isUser?(msg.userName||"User")+" · ":"You · ")+time+'</div>';
+  c.appendChild(d);if(scroll)c.scrollTop=c.scrollHeight;
+}
+function adminSendMsg(){
+  if(!activeChatUser||!adminSocket)return;
+  const inp=document.getElementById("admin-chat-input");
+  const text=inp.value.trim();if(!text)return;
+  adminSocket.emit("admin_message",{userId:activeChatUser,text});
+  inp.value="";
+}
+window.addEventListener("load",()=>setTimeout(initAdminChat,500));
 </script>
 </body>
 </html>
