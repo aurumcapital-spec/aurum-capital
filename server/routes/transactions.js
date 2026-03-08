@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const router = express.Router();
 const { pool } = require("../db");
 const { auth } = require("../middleware/auth");
@@ -15,10 +15,25 @@ router.get("/", auth, async (req, res) => {
   } catch (err) { res.status(500).json({ message: "Server error" }); }
 });
 
+// GET /api/transactions/wallet-addresses — returns active wallets for deposit page
+router.get("/wallet-addresses", auth, async (req, res) => {
+  try {
+    const r = await pool.query(
+      "SELECT id, method, label, address, network FROM wallet_addresses WHERE is_active=true ORDER BY created_at ASC"
+    );
+    res.json({ wallets: r.rows });
+  } catch (err) { res.status(500).json({ message: "Server error" }); }
+});
+
 // POST /api/transactions/deposit
 router.post("/deposit", auth, async (req, res) => {
   const { amount, plan_name, payment_method } = req.body;
-  const plans = { bronze:{roi:5,min:500,max:4999,days:30}, silver:{roi:8,min:5000,max:24999,days:60}, gold:{roi:12,min:25000,max:99999,days:90}, platinum:{roi:18,min:100000,max:999999,days:180} };
+  const plans = {
+    bronze:   { roi: 20, min: 100,   max: 999,    days: 15 },
+    silver:   { roi: 35, min: 500,   max: 4999,   days: 30 },
+    gold:     { roi: 50, min: 5000,  max: 24999,  days: 60 },
+    platinum: { roi: 60, min: 25000, max: 500000, days: 90 }
+  };
   const plan = plans[plan_name?.toLowerCase()];
 
   if (!plan) return res.status(400).json({ message: "Invalid plan selected." });
@@ -33,11 +48,10 @@ router.post("/deposit", auth, async (req, res) => {
       [req.user.id, amount, plan_name, payment_method, ref]
     );
 
-    // Notify admin
     const user = await pool.query("SELECT full_name, email FROM users WHERE id=$1", [req.user.id]);
     try {
       await sendEmail(process.env.ADMIN_EMAIL || "admin@nexvault.io", "New Deposit Request 📈",
-        `<h3>New Deposit Request</h3><p>User: ${user.rows[0].full_name} (${user.rows[0].email})</p><p>Amount: $${amount.toLocaleString()}</p><p>Plan: ${plan_name.toUpperCase()} VAULT</p><p>Method: ${payment_method}</p><p>Reference: ${ref}</p>`
+        `<h3>New Deposit Request</h3><p>User: ${user.rows[0].full_name} (${user.rows[0].email})</p><p>Amount: $${Number(amount).toLocaleString()}</p><p>Plan: ${plan_name.toUpperCase()} VAULT</p><p>Method: ${payment_method}</p><p>Reference: ${ref}</p>`
       );
     } catch(e) {}
 
@@ -54,7 +68,7 @@ router.post("/withdraw", auth, async (req, res) => {
   try {
     const userRes = await pool.query("SELECT balance, total_profit FROM users WHERE id=$1", [req.user.id]);
     const user = userRes.rows[0];
-    const available = parseFloat(user.balance) + parseFloat(user.total_profit);
+    const available = parseFloat(user.balance) + parseFloat(user.total_profit || 0);
     if (amount > available) return res.status(400).json({ message: `Insufficient balance. Available: $${available.toLocaleString()}` });
 
     const ref = "WIT-" + Date.now() + "-" + Math.random().toString(36).substring(2,6).toUpperCase();
