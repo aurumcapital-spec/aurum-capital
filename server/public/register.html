@@ -92,7 +92,17 @@ body{background:var(--black);color:var(--white);font-family:'Rajdhani',sans-seri
     <div id="ref-display" class="referral-row" style="display:none">🔗 Referred by: <span id="ref-code-display" style="color:var(--blue-bright)"></span></div>
     <div class="form-group"><label class="form-label">Referral Code (Optional)</label><input type="text" class="form-input" id="referral-code" placeholder="Enter referral code" style="text-transform:uppercase"/></div>
     <label class="terms-row"><input type="checkbox" id="terms"/>I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
-    <button class="btn-submit" id="register-btn" onclick="register()">INITIALIZE MY VAULT</button>
+    <div class="form-group" id="captcha-box" style="margin-bottom:20px">
+  <label class="form-label">SECURITY CHECK</label>
+  <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.2);border-radius:2px">
+    <span id="captcha-question" style="font-family:'Share Tech Mono',monospace;font-size:1rem;color:#38bdf8;font-weight:700;min-width:80px"></span>
+    <span style="color:#94a3b8;font-size:0.9rem">= ?</span>
+    <input id="captcha-answer" type="number" placeholder="Answer" style="flex:1;padding:8px 12px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.2);border-radius:2px;color:#f0f9ff;font-family:monospace;font-size:1rem;outline:none;-moz-appearance:textfield" />
+    <button type="button" onclick="refreshCaptcha()" style="padding:6px 10px;background:transparent;border:1px solid rgba(14,165,233,0.2);border-radius:2px;color:#94a3b8;cursor:pointer;font-size:0.8rem" title="New question">↻</button>
+  </div>
+  <div id="captcha-error" style="color:#ef4444;font-family:monospace;font-size:0.7rem;margin-top:6px;display:none">✗ Incorrect answer. Please try again.</div>
+</div>
+<button class="btn-submit" id="register-btn" onclick="register()">INITIALIZE MY VAULT</button>
   </div>
   <div class="login-link">Already have a vault? <a href="/login">Sign in →</a></div>
 </div>
@@ -135,6 +145,7 @@ function checkStrength(pw) {
 }
 
 async function register() {
+  if(!verifyCaptcha()) return;
   const firstName = document.getElementById('first-name').value.trim();
   const lastName = document.getElementById('last-name').value.trim();
   const email = document.getElementById('email').value.trim();
@@ -177,6 +188,34 @@ function showError(msg) {
   const e = document.getElementById('error-msg');
   e.textContent = '⚠ ' + msg; e.style.display = 'block';
 }
+
+var _cA = 0, _cB = 0, _cOp = '+';
+function refreshCaptcha() {
+  _cA = Math.floor(Math.random()*15)+1;
+  _cB = Math.floor(Math.random()*15)+1;
+  var ops = ['+','-','×'];
+  _cOp = ops[Math.floor(Math.random()*ops.length)];
+  if(_cOp==='-' && _cB>_cA){ var t=_cA;_cA=_cB;_cB=t; }
+  document.getElementById('captcha-question').textContent = _cA+' '+_cOp+' '+_cB;
+  var inp = document.getElementById('captcha-answer');
+  if(inp) inp.value='';
+  var err = document.getElementById('captcha-error');
+  if(err) err.style.display='none';
+}
+function verifyCaptcha() {
+  var ans = parseInt(document.getElementById('captcha-answer').value);
+  var correct;
+  if(_cOp==='+') correct=_cA+_cB;
+  else if(_cOp==='-') correct=_cA-_cB;
+  else correct=_cA*_cB;
+  if(ans!==correct){
+    document.getElementById('captcha-error').style.display='block';
+    refreshCaptcha();
+    return false;
+  }
+  return true;
+}
+window.addEventListener('DOMContentLoaded', refreshCaptcha);
 </script>
 </body>
 </html>
