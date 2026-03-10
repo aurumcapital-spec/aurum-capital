@@ -23,38 +23,91 @@ app.use("/api/transactions", require("./routes/transactions"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/plans", require("./routes/plans"));
 app.use("/api", require("./routes/setup"));
-const chatMessages = {};
+const { pool } = require("./db");
 const onlineAdmins = new Set();
 const onlineUsers = new Map();
-io.on("connection", (socket) => {
+
+// Ensure chat_messages table exists
+pool.query(`CREATE TABLE IF NOT EXISTS chat_messages (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  user_name TEXT,
+  from_role TEXT NOT NULL,
+  message TEXT NOT NULL,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+)`).catch(e => console.error("Chat table error:", e));
+
+async function getChatHistory(userId) {
+  try {
+    const r = await pool.query(
+      "SELECT * FROM chat_messages WHERE user_id=$1 ORDER BY created_at ASC LIMIT 100",
+      [userId]
+    );
+    return r.rows.map(row => ({
+      id: row.id, from: row.from_role, userId: row.user_id,
+      userName: row.user_name, text: row.message,
+      time: row.created_at, read: row.is_read
+    }));
+  } catch(e) { return []; }
+}
+
+async function saveMessage(userId, userName, fromRole, text) {
+  try {
+    const r = await pool.query(
+      "INSERT INTO chat_messages (user_id, user_name, from_role, message) VALUES ($1,$2,$3,$4) RETURNING *",
+      [userId, userName, fromRole, text]
+    );
+    const row = r.rows[0];
+    return { id: row.id, from: fromRole, userId, userName, text, time: row.created_at, read: false };
+  } catch(e) { return { id: Date.now(), from: fromRole, userId, userName, text, time: new Date().toISOString(), read: false }; }
+}
+
+async function getAllChats() {
+  try {
+    const r = await pool.query(
+      `SELECT DISTINCT ON (user_id) user_id, user_name FROM chat_messages WHERE from_role='user' ORDER BY user_id, created_at DESC`
+    );
+    const chats = [];
+    for (const row of r.rows) {
+      const msgs = await getChatHistory(row.user_id);
+      const unread = msgs.filter(m => !m.read && m.from !== 'admin').length;
+      chats.push({ userId: row.user_id, messages: msgs, unread });
+    }
+    return chats;
+  } catch(e) { return []; }
+}
+
+io.on("connection", async (socket) => {
   let user = null;
   try { user = jwt.verify(socket.handshake.auth.token, JWT_SECRET); } catch(e) { socket.disconnect(); return; }
   socket.userId = user.id; socket.userRole = user.role; socket.userName = user.full_name || user.email;
   if (user.role === "admin") {
     onlineAdmins.add(socket.id); socket.join("admins");
-    socket.emit("chat_list", Object.keys(chatMessages).map(uid => ({ userId: uid, messages: chatMessages[uid], unread: (chatMessages[uid]||[]).filter(m=>!m.read&&m.from!=="admin").length })));
+    const chats = await getAllChats();
+    socket.emit("chat_list", chats);
   } else {
     onlineUsers.set(String(user.id), socket.id); socket.join("user_"+user.id);
-    if (!chatMessages[user.id]) chatMessages[user.id] = [];
-    socket.emit("chat_history", chatMessages[user.id]);
+    const history = await getChatHistory(user.id);
+    socket.emit("chat_history", history);
     io.to("admins").emit("user_online", { userId: user.id, name: socket.userName });
   }
-  socket.on("user_message", (data) => {
+  socket.on("user_message", async (data) => {
     if (!user || user.role === "admin") return;
-    const msg = { id: Date.now(), from: "user", userId: user.id, userName: socket.userName, text: data.text, time: new Date().toISOString(), read: false };
-    if (!chatMessages[user.id]) chatMessages[user.id] = [];
-    chatMessages[user.id].push(msg);
+    const msg = await saveMessage(user.id, socket.userName, "user", data.text);
     io.to("admins").emit("new_message", { userId: user.id, userName: socket.userName, message: msg });
   });
-  socket.on("admin_message", (data) => {
+  socket.on("admin_message", async (data) => {
     if (!user || user.role !== "admin") return;
-    const msg = { id: Date.now(), from: "admin", text: data.text, time: new Date().toISOString(), read: true };
-    if (!chatMessages[data.userId]) chatMessages[data.userId] = [];
-    chatMessages[data.userId].push(msg);
+    const targetUser = await pool.query("SELECT full_name, email FROM users WHERE id=$1", [data.userId]).then(r=>r.rows[0]).catch(()=>null);
+    const uName = targetUser ? (targetUser.full_name || targetUser.email) : "User #"+data.userId;
+    const msg = await saveMessage(data.userId, uName, "admin", data.text);
     io.to("user_"+data.userId).emit("admin_reply", msg);
     socket.emit("message_sent", { userId: data.userId, message: msg });
   });
-  socket.on("mark_read", (data) => { if (chatMessages[data.userId]) chatMessages[data.userId].forEach(m=>{ if(m.from!=="admin") m.read=true; }); });
+  socket.on("mark_read", async (data) => {
+    try { await pool.query("UPDATE chat_messages SET is_read=true WHERE user_id=$1 AND from_role='user'", [data.userId]); } catch(e) {}
+  });
   socket.on("disconnect", () => {
     onlineAdmins.delete(socket.id);
     if (user && user.role !== "admin") { onlineUsers.delete(String(user.id)); io.to("admins").emit("user_offline", { userId: user.id }); }
