@@ -120,3 +120,38 @@ app.get("/dashboard", (req,res) => res.sendFile(path.join(__dirname,"public","da
 app.get("/admin", (req,res) => res.sendFile(path.join(__dirname,"public","admin.html")));
 app.get("/health", (req,res) => res.json({ status:"ok" }));
 server.listen(PORT, () => console.log("NexVault on port "+PORT));
+// ─── AUTO ROI + INVESTMENT COMPLETION (runs every 24 hours) ───
+async function runDailyROI() {
+  try {
+    console.log("[CRON] Running daily ROI...");
+    // Complete expired investments first
+    const expired = await pool.query(
+      "UPDATE investments SET status='completed' WHERE status='active' AND end_date<=NOW() RETURNING user_id, plan_name, amount, roi_percent"
+    );
+    for (const inv of expired.rows) {
+      await pool.query("UPDATE users SET current_plan=NULL WHERE id=$1 AND NOT EXISTS (SELECT 1 FROM investments WHERE user_id=$1 AND status='active')", [inv.user_id]);
+      console.log("[CRON] Completed investment for user", inv.user_id);
+    }
+
+    // Credit daily ROI to active investments
+    const investments = await pool.query(
+      "SELECT * FROM investments WHERE status='active' AND end_date>NOW()"
+    );
+    let credited = 0;
+    for (const inv of investments.rows) {
+      const dailyROI = (parseFloat(inv.amount) * (inv.roi_percent / 100)) / inv.duration_days;
+      await pool.query("UPDATE users SET balance=balance+$1, total_profit=total_profit+$1 WHERE id=$2", [dailyROI, inv.user_id]);
+      await pool.query(
+        "INSERT INTO transactions (user_id,type,amount,plan_name,status,reference,created_at) VALUES ($1,'profit',$2,$3,'completed',$4,NOW())",
+        [inv.user_id, dailyROI, inv.plan_name, "ROI-AUTO-" + Date.now()]
+      );
+      credited++;
+    }
+    console.log("[CRON] ROI credited to", credited, "investments.");
+  } catch(e) { console.error("[CRON] ROI error:", e.message); }
+}
+
+// Run immediately on startup, then every 24 hours
+runDailyROI();
+setInterval(runDailyROI, 24 * 60 * 60 * 1000);
+
