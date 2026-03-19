@@ -122,4 +122,43 @@ router.post("/run-roi", auth, adminAuth, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ message:"Server error" }); }
 });
 
+
+// GET /api/admin/kyc - Get all pending KYC
+router.get("/kyc", auth, adminAuth, async (req, res) => {
+  try {
+    await pool.query(`CREATE TABLE IF NOT EXISTS kyc_documents (
+      id SERIAL PRIMARY KEY, user_id INTEGER NOT NULL, document_type TEXT,
+      document_data TEXT, selfie_data TEXT, status TEXT DEFAULT 'pending',
+      submitted_at TIMESTAMPTZ DEFAULT NOW(), reviewed_at TIMESTAMPTZ, note TEXT
+    )`);
+    const r = await pool.query(`
+      SELECT k.*, u.full_name, u.email FROM kyc_documents k
+      JOIN users u ON u.id=k.user_id
+      ORDER BY k.submitted_at DESC
+    `);
+    res.json({ kyc: r.rows });
+  } catch(err) { res.status(500).json({ message: "Server error" }); }
+});
+
+// POST /api/admin/kyc/:id/approve
+router.post("/kyc/:id/approve", auth, adminAuth, async (req, res) => {
+  try {
+    const k = await pool.query("UPDATE kyc_documents SET status='approved', reviewed_at=NOW() WHERE id=$1 RETURNING user_id", [req.params.id]);
+    if (!k.rows.length) return res.status(404).json({ message: "Not found" });
+    await pool.query("UPDATE users SET kyc_status='verified' WHERE id=$1", [k.rows[0].user_id]);
+    res.json({ message: "KYC approved" });
+  } catch(err) { res.status(500).json({ message: "Server error" }); }
+});
+
+// POST /api/admin/kyc/:id/reject
+router.post("/kyc/:id/reject", auth, adminAuth, async (req, res) => {
+  const { note } = req.body;
+  try {
+    const k = await pool.query("UPDATE kyc_documents SET status='rejected', reviewed_at=NOW(), note=$1 WHERE id=$2 RETURNING user_id", [note||'', req.params.id]);
+    if (!k.rows.length) return res.status(404).json({ message: "Not found" });
+    await pool.query("UPDATE users SET kyc_status='rejected' WHERE id=$1", [k.rows[0].user_id]);
+    res.json({ message: "KYC rejected" });
+  } catch(err) { res.status(500).json({ message: "Server error" }); }
+});
+
 module.exports = router;

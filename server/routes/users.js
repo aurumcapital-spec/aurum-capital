@@ -40,4 +40,41 @@ router.put("/profile", auth, async (req, res) => {
   } catch (err) { res.status(500).json({ message: "Server error" }); }
 });
 
+
+// POST /api/users/kyc - Submit KYC documents
+router.post("/kyc", auth, async (req, res) => {
+  const { document_type, document_data, selfie_data } = req.body;
+  if (!document_type || !document_data) return res.status(400).json({ message: "Document type and file required." });
+  if (document_data.length > 5000000) return res.status(400).json({ message: "File too large. Max 3MB." });
+  try {
+    await pool.query(`CREATE TABLE IF NOT EXISTS kyc_documents (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      document_type TEXT,
+      document_data TEXT,
+      selfie_data TEXT,
+      status TEXT DEFAULT 'pending',
+      submitted_at TIMESTAMPTZ DEFAULT NOW(),
+      reviewed_at TIMESTAMPTZ,
+      note TEXT
+    )`);
+    await pool.query("DELETE FROM kyc_documents WHERE user_id=$1", [req.user.id]);
+    await pool.query(
+      "INSERT INTO kyc_documents (user_id, document_type, document_data, selfie_data) VALUES ($1,$2,$3,$4)",
+      [req.user.id, document_type, document_data, selfie_data||null]
+    );
+    await pool.query("UPDATE users SET kyc_status='pending' WHERE id=$1", [req.user.id]);
+    res.json({ message: "KYC submitted successfully. Under review within 24hrs." });
+  } catch(err) { console.error(err); res.status(500).json({ message: "Server error" }); }
+});
+
+// GET /api/users/kyc - Get KYC status
+router.get("/kyc", auth, async (req, res) => {
+  try {
+    const r = await pool.query("SELECT status, document_type, submitted_at, note FROM kyc_documents WHERE user_id=$1 ORDER BY submitted_at DESC LIMIT 1", [req.user.id]);
+    const user = await pool.query("SELECT kyc_status FROM users WHERE id=$1", [req.user.id]);
+    res.json({ kyc_status: user.rows[0]?.kyc_status || 'unverified', submission: r.rows[0] || null });
+  } catch(err) { res.status(500).json({ message: "Server error" }); }
+});
+
 module.exports = router;
