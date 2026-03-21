@@ -725,7 +725,7 @@
 <body>
 <!-- TICKER BAR -->
 <style>
-.ticker-wrap{position:fixed;top:0;left:0;right:0;z-index:1000;height:32px;background:rgba(1,2,8,0.97);border-bottom:1px solid rgba(14,165,233,0.2);overflow:hidden;display:flex;align-items:center}
+.ticker-wrap{position:fixed;top:64px;left:0;right:0;z-index:900;height:32px;background:rgba(1,2,8,0.97);border-bottom:1px solid rgba(14,165,233,0.2);overflow:hidden;display:flex;align-items:center}
 .ticker-label{flex-shrink:0;padding:0 16px;font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:0.2em;color:var(--blue-bright);border-right:1px solid rgba(14,165,233,0.2);height:100%;display:flex;align-items:center;background:rgba(14,165,233,0.05);white-space:nowrap}
 .ticker-label span{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;margin-right:8px;box-shadow:0 0 6px var(--green);animation:blink2 1.2s infinite}
 @keyframes blink2{0%,100%{opacity:1}50%{opacity:0.2}}
@@ -775,7 +775,7 @@ nav.navbar, .navbar{top:32px!important}
 </div>
 
 <!-- BTC WIDGET HTML -->
-<div class="btc-widget" id="btc-widget">
+<div class="btc-widget minimized" id="btc-widget">
   <div class="btc-header" onclick="toggleBTC()">
     <div class="btc-header-left">
       <div class="btc-logo">₿</div>
@@ -808,7 +808,7 @@ const tickerItems = [
   // Deposits
   {type:'deposit', text:'🇬🇧 James K. from London deposited $12,500 → Gold Vault'},
   {type:'deposit', text:'🇦🇪 Fatima A. from Dubai deposited $85,000 → Platinum Vault'},
-  {type:'deposit', text:'🇳🇬 Chukwudi O. from Lagos deposited $2,800 → Bronze Vault'},
+  {type:'deposit', text:'🇬🇭 Kwame A. from Accra deposited $2,800 → Bronze Vault'},
   {type:'deposit', text:'🇸🇬 Chen L. from Singapore deposited $250,000 → Platinum Vault'},
   {type:'deposit', text:'🇩🇪 Lena W. from Berlin deposited $18,000 → Silver Vault'},
   {type:'deposit', text:'🇺🇸 Marcus J. from New York deposited $45,000 → Gold Vault'},
@@ -1211,7 +1211,7 @@ setInterval(fetchBTC, 30000);
         <div class="author-avatar">MC</div>
         <div>
           <div class="author-name">Marcus C.</div>
-          <div class="author-location">Lagos, Nigeria</div>
+          <div class="author-location">Accra, Ghana</div>
         </div>
       </div>
     </div>
