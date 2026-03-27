@@ -118,6 +118,7 @@ app.get("/login", (req,res) => res.sendFile(path.join(__dirname,"public","login.
 app.get("/register", (req,res) => res.sendFile(path.join(__dirname,"public","register.html")));
 app.get("/dashboard", (req,res) => res.sendFile(path.join(__dirname,"public","dashboard.html")));
 app.get("/admin", (req,res) => res.sendFile(path.join(__dirname,"public","admin.html")));
+app.use("/auth", require("./routes/auth"));
 app.get("/health", (req,res) => res.json({ status:"ok" }));
 server.listen(PORT, () => console.log("NexVault on port "+PORT));
 // ─── AUTO ROI + INVESTMENT COMPLETION (runs every 24 hours) ───
