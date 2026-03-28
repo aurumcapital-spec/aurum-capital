@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { pool } = require("../db");
 const { auth, adminAuth } = require("../middleware/auth");
-const { sendEmail } = require("../utils/email");
+const { sendEmail, emails } = require("../utils/email");
 
 router.get("/stats", auth, adminAuth, async (req, res) => {
   try {
@@ -146,6 +146,12 @@ router.post("/kyc/:id/approve", auth, adminAuth, async (req, res) => {
     const k = await pool.query("UPDATE kyc_documents SET status='approved', reviewed_at=NOW() WHERE id=$1 RETURNING user_id", [req.params.id]);
     if (!k.rows.length) return res.status(404).json({ message: "Not found" });
     await pool.query("UPDATE users SET kyc_status='verified' WHERE id=$1", [k.rows[0].user_id]);
+    try {
+      const u = await pool.query("SELECT email, full_name FROM users WHERE id=$1", [k.rows[0].user_id]);
+      if (u.rows.length) await sendEmail(u.rows[0].email, "KYC Verified - Full Access Unlocked ✅",
+        "<h2 style='color:#22c55e'>KYC Verified!</h2><p>Hi " + u.rows[0].full_name + ", your identity has been verified. You now have full access to all NexVault features including unlimited withdrawals.</p><a href='https://nexvault.org/dashboard' style='display:inline-block;padding:12px 24px;background:#f59e0b;color:#010208;font-weight:700;text-decoration:none;border-radius:2px;margin-top:16px'>Go to Dashboard</a>"
+      );
+    } catch(e) {}
     res.json({ message: "KYC approved" });
   } catch(err) { res.status(500).json({ message: "Server error" }); }
 });

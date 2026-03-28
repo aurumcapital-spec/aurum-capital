@@ -70,6 +70,14 @@ router.post("/login", async (req, res) => {
 
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role || "user" }, JWT_SECRET, { expiresIn: "7d" });
 
+    // Send login alert email
+    try {
+      const loginTime = new Date().toLocaleString('en-US', { timeZone: 'UTC' }) + ' UTC';
+      const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'Unknown';
+      await sendEmail(user.email, "New Login Detected - NexVault 🔐",
+        "<h2 style='color:#38bdf8'>Security Alert</h2><p>Hi " + user.full_name + ", a new login was detected on your NexVault account.</p><p style='color:#94a3b8'>Time: " + loginTime + "<br/>If this wasn't you, contact support@nexvault.org immediately.</p>"
+      );
+    } catch(e) {}
     res.json({
       token,
       user: {
