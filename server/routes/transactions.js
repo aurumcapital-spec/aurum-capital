@@ -48,12 +48,16 @@ router.post("/deposit", auth, async (req, res) => {
       [req.user.id, amount, plan_name, payment_method, ref]
     );
 
-    const user = await pool.query("SELECT full_name, email FROM users WHERE id=$1", [req.user.id]);
-    try {
-      await sendEmail(process.env.ADMIN_EMAIL || "admin@nexvault.io", "New Deposit Request 📈",
-        `<h3>New Deposit Request</h3><p>User: ${user.rows[0].full_name} (${user.rows[0].email})</p><p>Amount: $${Number(amount).toLocaleString()}</p><p>Plan: ${plan_name.toUpperCase()} VAULT</p><p>Method: ${payment_method}</p><p>Reference: ${ref}</p>`
-      );
-    } catch(e) {}
+    // Send email non-blocking (fire and forget)
+    pool.query("SELECT full_name, email FROM users WHERE id=$1", [req.user.id]).then(user => {
+      sendEmail(process.env.SMTP_USER || "support@nexvault.org", "New Deposit Request 📈",
+        "<h3>New Deposit Request</h3><p>User: " + user.rows[0].full_name + " (" + user.rows[0].email + ")</p><p>Amount: $" + Number(amount).toLocaleString() + "</p><p>Plan: " + plan_name.toUpperCase() + " VAULT</p><p>Method: " + payment_method + "</p><p>Reference: " + ref + "</p>"
+      ).catch(e => console.log("Email error:", e.message));
+      // Send confirmation to user
+      sendEmail(user.rows[0].email, "Deposit Received - NexVault",
+        "<h2 style='color:#fbbf24'>Deposit Received!</h2><p>Hi " + user.rows[0].full_name + ", we received your $" + Number(amount).toLocaleString() + " deposit for the " + plan_name.toUpperCase() + " VAULT plan.</p><p style='color:#94a3b8'>Admin will verify within 24 hours.</p><a href='https://nexvault.org/dashboard' style='display:inline-block;padding:12px 24px;background:#f59e0b;color:#010208;font-weight:700;text-decoration:none;border-radius:2px;margin-top:16px'>View Dashboard</a>"
+      ).catch(e => console.log("Email error:", e.message));
+    }).catch(e => console.log("User query error:", e.message));
 
     res.status(201).json({ message: "Deposit request submitted. Awaiting confirmation.", transaction: r.rows[0] });
   } catch (err) { console.error(err); res.status(500).json({ message: "Server error" }); }
