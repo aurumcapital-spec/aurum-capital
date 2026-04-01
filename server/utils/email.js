@@ -1,12 +1,12 @@
 const nodemailer = require("nodemailer");
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.zoho.com",
-  port: parseInt(process.env.SMTP_PORT || "587"),
-  secure: false,
+  host: process.env.SMTP_HOST || "mail.privateemail.com",
+  port: parseInt(process.env.SMTP_PORT || "465"),
+  secure: process.env.SMTP_PORT === "465" || process.env.SMTP_SECURE === "true",
   auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-  connectionTimeout: 5000,
-  greetingTimeout: 5000,
-  socketTimeout: 5000,
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
 });
 
 const wrap = (body) => `
