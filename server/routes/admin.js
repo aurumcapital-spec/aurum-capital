@@ -71,9 +71,42 @@ router.post("/transactions/:id/approve", auth, adminAuth, async (req, res) => {
     } else if (t.type==="withdrawal") {
       await pool.query("UPDATE users SET balance=GREATEST(balance-$1,0) WHERE id=$2", [t.amount, t.user_id]);
     }
-    const user = await pool.query("SELECT email,full_name FROM users WHERE id=$1", [t.user_id]);
-    try { await sendEmail(user.rows[0].email, t.type==="deposit"?"Deposit Confirmed!":"Withdrawal Processed!", "<p>Hi "+user.rows[0].full_name+",</p><p>Your "+t.type+" of $"+Number(t.amount).toLocaleString()+" has been processed.</p>"); } catch(e) {}
     res.json({ message:"Approved" });
+    // Non-blocking investor email
+    setImmediate(async () => {
+      try {
+        const uInfo = await pool.query("SELECT email, full_name FROM users WHERE id=$1", [t.user_id]);
+        if (!uInfo.rows.length) return;
+        const u = uInfo.rows[0];
+        if (t.type === "deposit") {
+          const plans = { bronze:{roi:20,days:15}, silver:{roi:35,days:30}, gold:{roi:50,days:60}, platinum:{roi:60,days:90} };
+          const plan = plans[t.plan_name?.toLowerCase()] || {roi:20,days:15};
+          const expected = (Number(t.amount)*(1+plan.roi/100)).toLocaleString();
+          await sendEmail(u.email, "Investment Activated - " + (t.plan_name||"").toUpperCase() + " VAULT 🚀",
+            "<h2 style='color:#22c55e;margin:0 0 16px'>Investment Activated! 🚀</h2>" +
+            "<p style='color:#94a3b8'>Hi " + u.full_name + ", your deposit has been approved and your investment is now active.</p>" +
+            "<div style='padding:16px;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.2);border-radius:4px;margin:20px 0'>" +
+            "<div style='display:flex;justify-content:space-between;margin-bottom:8px'><span style='color:#94a3b8;font-size:0.7rem'>INVESTED</span><span style='color:#fbbf24;font-weight:700;font-family:monospace'>$" + Number(t.amount).toLocaleString() + "</span></div>" +
+            "<div style='display:flex;justify-content:space-between;margin-bottom:8px'><span style='color:#94a3b8;font-size:0.7rem'>PLAN</span><span style='color:#f0f9ff;font-family:monospace'>" + (t.plan_name||"").toUpperCase() + " VAULT</span></div>" +
+            "<div style='display:flex;justify-content:space-between;margin-bottom:8px'><span style='color:#94a3b8;font-size:0.7rem'>ROI</span><span style='color:#22c55e;font-family:monospace'>" + plan.roi + "%</span></div>" +
+            "<div style='display:flex;justify-content:space-between;margin-bottom:8px'><span style='color:#94a3b8;font-size:0.7rem'>DURATION</span><span style='color:#f0f9ff;font-family:monospace'>" + plan.days + " days</span></div>" +
+            "<div style='display:flex;justify-content:space-between'><span style='color:#94a3b8;font-size:0.7rem'>EXPECTED RETURN</span><span style='color:#22c55e;font-weight:700;font-family:monospace'>$" + expected + "</span></div></div>" +
+            "<a href='https://nexvault.org/dashboard' style='display:inline-block;padding:12px 24px;background:#f59e0b;color:#010208;font-weight:700;text-decoration:none;border-radius:2px'>Track Investment</a>"
+          );
+          console.log("[EMAIL] Deposit approved sent to", u.email);
+        } else if (t.type === "withdrawal") {
+          await sendEmail(u.email, "Withdrawal Approved - $" + Number(t.amount).toLocaleString() + " Processing 💸",
+            "<h2 style='color:#22c55e;margin:0 0 16px'>Withdrawal Approved 💸</h2>" +
+            "<p style='color:#94a3b8'>Hi " + u.full_name + ", your withdrawal of $" + Number(t.amount).toLocaleString() + " has been approved and is being processed.</p>" +
+            "<div style='padding:16px;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.2);border-radius:4px;margin:20px 0'>" +
+            "<div style='display:flex;justify-content:space-between;margin-bottom:8px'><span style='color:#94a3b8;font-size:0.7rem'>AMOUNT</span><span style='color:#fbbf24;font-weight:700;font-family:monospace'>$" + Number(t.amount).toLocaleString() + "</span></div>" +
+            "<div style='display:flex;justify-content:space-between'><span style='color:#94a3b8;font-size:0.7rem'>METHOD</span><span style='color:#f0f9ff;font-family:monospace'>" + (t.payment_method||"—") + "</span></div></div>" +
+            "<p style='color:#94a3b8;font-size:0.85rem'>Funds typically arrive within 1-24 hours.</p>"
+          );
+          console.log("[EMAIL] Withdrawal approved sent to", u.email);
+        }
+      } catch(e) { console.log("[EMAIL ERROR] Approval:", e.message); }
+    });
   } catch (err) { console.error(err); res.status(500).json({ message:"Server error" }); }
 });
 
