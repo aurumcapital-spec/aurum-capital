@@ -3,7 +3,7 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { pool } = require("../db");
-const { sendEmail } = require("../utils/email");
+const { sendEmail, sendTemplate } = require("../utils/email");
 
 const JWT_SECRET = process.env.JWT_SECRET || "nexvault_secret_2030";
 
@@ -38,16 +38,9 @@ router.post("/register", async (req, res) => {
 
     // Welcome email (non-blocking)
     setImmediate(() => {
-      sendEmail(user.email, "Welcome to NexVault! Your Vault is Ready 🏦",
-        "<h2 style='color:#fbbf24'>Welcome to NexVault, " + full_name + "!</h2>" +
-        "<p style='color:#94a3b8'>Your vault has been created successfully. Start investing and growing your wealth today.</p>" +
-        "<div style='padding:16px;background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:4px;margin:20px 0'>" +
-        "<div style='font-size:0.7rem;color:#94a3b8;margin-bottom:4px'>YOUR REFERRAL CODE</div>" +
-        "<div style='font-family:monospace;font-size:1.2rem;color:#38bdf8;font-weight:700'>" + myRefCode + "</div>" +
-        "<div style='font-size:0.75rem;color:#94a3b8;margin-top:4px'>Share to earn 5% on every referral deposit</div></div>" +
-        "<a href='https://nexvault.org/dashboard' style='display:inline-block;padding:12px 24px;background:#f59e0b;color:#010208;font-weight:700;text-decoration:none;border-radius:2px;margin-top:16px'>Launch Your Vault</a>"
-      ).then(() => console.log("[EMAIL] Welcome sent to", user.email))
-       .catch(e => console.log("[EMAIL ERROR] Welcome:", e.message));
+      sendTemplate("welcome", user.email, user.full_name, myRefCode)
+        .then(() => console.log("[EMAIL] Welcome sent to", user.email))
+        .catch(e => console.log("[EMAIL ERROR] Welcome:", e.message));
     });
 
     res.status(201).json({ token, user: { id: user.id, full_name: user.full_name, email: user.email, referral_code: user.referral_code } });
