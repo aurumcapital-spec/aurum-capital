@@ -83,11 +83,11 @@ router.post("/transactions/:id/approve", auth, adminAuth, async (req, res) => {
           const plan = plans[t.plan_name?.toLowerCase()] || {roi:20,days:15};
           await sendTemplate("depositApproved", u.email, u.full_name, t.amount, t.plan_name||"bronze", plan.roi, plan.days);
           console.log("[EMAIL] Deposit approved sent to", u.email);
-        } } else if (t.type === "withdrawal") {
+        } else if (t.type === "withdrawal") {
           await sendTemplate("withdrawalApproved", u.email, u.full_name, t.amount, t.payment_method||"—");
           console.log("[EMAIL] Withdrawal approved sent to", u.email);
         }
-        } catch(e) { console.log("[EMAIL ERROR] Approval:", e.message); }
+      } catch(e) { console.log("[EMAIL ERROR] Approval:", e.message); }
     });
   } catch (err) { console.error(err); res.status(500).json({ message:"Server error" }); }
 });
