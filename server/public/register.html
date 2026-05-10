@@ -232,6 +232,22 @@ function togglePwd(fieldId, btn) {
     btn.style.color = '#94a3b8';
   }
 }
+
+// Auto-fill referral code from URL
+window.addEventListener('DOMContentLoaded', function() {
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get('ref');
+  if (ref) {
+    const inp = document.getElementById('referral-code');
+    if (inp) {
+      inp.value = ref.toUpperCase();
+      const refDisplay = document.getElementById('ref-display');
+      const refCode = document.getElementById('ref-code-display');
+      if (refDisplay) refDisplay.style.display = 'flex';
+      if (refCode) refCode.textContent = ref.toUpperCase();
+    }
+  }
+});
 </script>
 </body>
 </html>
