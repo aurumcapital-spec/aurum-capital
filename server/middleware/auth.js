@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const JWT_SECRET = process.env.JWT_SECRET || "nexvault_secret_2030";
+const JWT_SECRET = process.env.JWT_SECRET || "nexvault_secret_2026";
 const auth = (req, res, next) => {
   const header = req.headers.authorization;
   if (!header || !header.startsWith("Bearer ")) return res.status(401).json({ message: "Unauthorized" });
