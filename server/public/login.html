@@ -215,5 +215,18 @@ function togglePwd(fieldId, btn) {
   }
 }
 </script>
+
+<script>
+// Visitor beacon - notify admin of visit
+(function() {
+  try {
+    fetch('/api/visitor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ page: window.location.pathname })
+    }).catch(function(){});
+  } catch(e) {}
+})();
+</script>
 </body>
 </html>

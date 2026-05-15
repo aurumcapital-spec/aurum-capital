@@ -124,6 +124,16 @@ app.get("/ref/:code", (req, res) => {
   res.redirect("/register?ref=" + req.params.code);
 });
 app.get("/health", (req,res) => res.json({ status:"ok" }));
+
+// Visitor tracking endpoint
+app.post("/api/visitor", (req, res) => {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.connection.remoteAddress || 'unknown';
+  const page = req.body.page || '/';
+  const ua = req.headers['user-agent'] || '';
+  // Emit to all connected admins
+  io.to("admins").emit("new_visitor", { ip, page, ua, time: new Date().toISOString() });
+  res.json({ ok: true });
+});
 server.listen(PORT, () => console.log("NexVault on port "+PORT));
 // ─── AUTO ROI + INVESTMENT COMPLETION (runs every 24 hours) ───
 async function runDailyROI() {

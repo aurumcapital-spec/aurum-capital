@@ -102,7 +102,29 @@ tr:hover td{background:rgba(14,165,233,0.03)}
   </nav>
 </aside>
 <main class="main">
-  <div class="topbar"><div class="page-title" id="page-title">ADMIN OVERVIEW</div><div class="admin-status"><span class="admin-dot"></span>ADMIN FULL ACCESS</div></div>
+  <div class="topbar">
+  <div class="page-title" id="page-title">ADMIN OVERVIEW</div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <!-- SOUND TOGGLE -->
+    <button id="sound-toggle" onclick="toggleSound()" title="Toggle visitor sound" style="background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);border-radius:4px;padding:6px 10px;cursor:pointer;font-size:0.75rem;color:#38bdf8;font-family:monospace;display:flex;align-items:center;gap:6px">
+      <span id="sound-icon">🔔</span><span id="sound-label">SOUND ON</span>
+    </button>
+    <!-- VISITORS COUNTER -->
+    <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:4px;padding:6px 12px;font-family:monospace;font-size:0.7rem;color:#22c55e;display:flex;align-items:center;gap:6px">
+      <span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;animation:blink 1.5s infinite"></span>
+      <span id="visitor-count">0</span> LIVE VISITORS
+    </div>
+    <div class="admin-status"><span class="admin-dot"></span>ADMIN FULL ACCESS</div>
+  </div>
+</div>
+<!-- VISITOR NOTIFICATION POPUP -->
+<div id="visitor-popup" style="display:none;position:fixed;top:70px;right:20px;z-index:9999;background:rgba(3,7,18,0.97);border:1px solid rgba(14,165,233,0.25);border-radius:8px;padding:14px 18px;min-width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.5);animation:slideIn 0.3s ease">
+  <div style="font-size:9px;letter-spacing:3px;color:#38bdf8;font-family:monospace;margin-bottom:8px">● NEW VISITOR</div>
+  <div id="visitor-flag" style="font-size:24px;margin-bottom:6px"></div>
+  <div id="visitor-info" style="font-size:12px;color:#f0f9ff;font-family:monospace"></div>
+  <div id="visitor-time" style="font-size:10px;color:#94a3b8;margin-top:4px;font-family:monospace"></div>
+</div>
+<!-- VISITOR LOG TABLE (in overview) -->
   <div class="content">
     <div class="page active" id="page-overview">
       <div class="stats-grid">
@@ -205,11 +227,110 @@ async function runROI(){try{await apiFetch("/admin/run-roi",{method:"POST"});sho
 async function loadWallets(){const el=document.getElementById("wallets-list");el.innerHTML='<div style="text-align:center;padding:32px;color:#94a3b8;font-family:monospace">LOADING...</div>';try{const d=await apiFetch("/admin/wallets");const W=d.wallets||[];if(!W.length){el.innerHTML='<div style="text-align:center;padding:32px;color:#94a3b8;font-family:monospace">NO WALLETS YET</div>';return;}const ic={btc:"₿",eth:"Ξ",usdt:"₮",usdt_erc20:"₮",bnb:"B",bank:"🏦"};el.innerHTML=W.map(w=>'<div style="padding:14px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.15);border-radius:4px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="font-size:1.3rem">'+(ic[w.method]||"💳")+'</span><div style="flex:1"><div style="font-family:Orbitron,monospace;font-size:0.75rem;font-weight:700">'+w.label+'</div><div style="font-family:monospace;font-size:0.6rem;color:#94a3b8">'+w.method.toUpperCase()+(w.network?" · "+w.network:"")+'</div></div><span style="padding:2px 8px;font-family:monospace;font-size:0.6rem;background:'+(w.is_active?"rgba(34,197,94,0.1)":"rgba(239,68,68,0.1)")+';border:1px solid '+(w.is_active?"rgba(34,197,94,0.3)":"rgba(239,68,68,0.3)")+';color:'+(w.is_active?"#22c55e":"#ef4444")+';border-radius:2px">'+(w.is_active?"ACTIVE":"OFF")+'</span></div><div style="font-family:monospace;font-size:0.7rem;color:#38bdf8;word-break:break-all;padding:8px;background:rgba(14,165,233,0.05);border-radius:2px;margin-bottom:8px">'+w.address+'</div><div style="display:flex;gap:6px"><button class="btn btn-view" onclick="navigator.clipboard.writeText(\''+w.address+'\').then(()=>showToast(\'Copied!\'))">COPY</button><button class="btn btn-reject" onclick="deleteWallet('+w.id+')">DELETE</button></div></div>').join("");}catch(e){document.getElementById("wallets-list").innerHTML='<div style="color:#ef4444;padding:20px">ERROR LOADING</div>';}}
 async function addWallet(){const m=document.getElementById("w-method").value;const l=document.getElementById("w-label").value||m.toUpperCase();const a=document.getElementById("w-address").value.trim();const n=document.getElementById("w-network").value.trim();if(!a){showToast("Enter wallet address",true);return;}try{await apiFetch("/admin/wallets",{method:"POST",body:JSON.stringify({method:m,label:l,address:a,network:n})});showToast("Wallet added!");document.getElementById("w-address").value="";document.getElementById("w-label").value="";document.getElementById("w-network").value="";loadWallets();}catch(e){showToast("Failed",true);}}
 async function deleteWallet(id){if(!confirm("Delete this wallet?"))return;try{await apiFetch("/admin/wallets/"+id,{method:"DELETE"});showToast("Deleted");loadWallets();}catch(e){showToast("Failed",true);}}
-function initAdminChat(){if(typeof io==="undefined")return;adminSocket=io({auth:{token}});adminSocket.on("chat_list",L=>{L.forEach(c=>{chatConvos[c.userId]=c.messages||[];});renderChatList();});adminSocket.on("new_message",data=>{if(!chatConvos[data.userId])chatConvos[data.userId]=[];chatConvos[data.userId].push(data.message);renderChatList();if(activeChatUser==data.userId){appendAdminMsg(data.message);adminSocket.emit("mark_read",{userId:data.userId});}else{const tot=Object.values(chatConvos).reduce((a,ms)=>a+ms.filter(m=>!m.read&&m.from!=="admin").length,0);const b=document.getElementById("chat-nav-count");if(tot>0){b.style.display="flex";b.textContent=tot;}showToast("Message from "+data.userName);}});adminSocket.on("message_sent",d=>{if(activeChatUser==d.userId)appendAdminMsg(d.message);});adminSocket.on("user_online",d=>{onlineUsrs.add(String(d.userId));document.getElementById("online-count").textContent=onlineUsrs.size+" online";renderChatList();});adminSocket.on("user_offline",d=>{onlineUsrs.delete(String(d.userId));document.getElementById("online-count").textContent=onlineUsrs.size+" online";renderChatList();});}
+function initAdminChat(){if(typeof io==="undefined")return;adminSocket=io({auth:{token}});adminSocket.on("chat_list",L=>{L.forEach(c=>{chatConvos[c.userId]=c.messages||[];});renderChatList();});adminSocket.on("new_message",data=>{if(!chatConvos[data.userId])chatConvos[data.userId]=[];chatConvos[data.userId].push(data.message);renderChatList();if(activeChatUser==data.userId){appendAdminMsg(data.message);adminSocket.emit("mark_read",{userId:data.userId});}else{const tot=Object.values(chatConvos).reduce((a,ms)=>a+ms.filter(m=>!m.read&&m.from!=="admin").length,0);const b=document.getElementById("chat-nav-count");if(tot>0){b.style.display="flex";b.textContent=tot;}showToast("Message from "+data.userName);}});adminSocket.on("message_sent",d=>{if(activeChatUser==d.userId)appendAdminMsg(d.message);});adminSocket.on("new_visitor", async (data) => {
+  await trackVisitor(data.ip, data.page);
+});
+adminSocket.on("user_online",d=>{onlineUsrs.add(String(d.userId));document.getElementById("online-count").textContent=onlineUsrs.size+" online";renderChatList();});adminSocket.on("user_offline",d=>{onlineUsrs.delete(String(d.userId));document.getElementById("online-count").textContent=onlineUsrs.size+" online";renderChatList();});}
 function renderChatList(){const el=document.getElementById("chat-list");const U=Object.keys(chatConvos);if(!U.length){el.innerHTML='<div style="text-align:center;padding:32px;color:#94a3b8;font-family:monospace">No conversations yet</div>';return;}el.innerHTML=U.map(uid=>{const msgs=chatConvos[uid]||[];const last=msgs[msgs.length-1];const ur=msgs.filter(m=>!m.read&&m.from!=="admin").length;const on=onlineUsrs.has(String(uid));const ac=activeChatUser==uid;return '<div onclick="openChat('+uid+')" style="padding:12px;border-radius:4px;cursor:pointer;margin-bottom:4px;background:'+(ac?"rgba(14,165,233,0.1)":"rgba(14,165,233,0.03)")+';border:1px solid '+(ac?"rgba(14,165,233,0.25)":"transparent")+'"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="width:8px;height:8px;border-radius:50%;background:'+(on?"#22c55e":"#94a3b8")+';flex-shrink:0"></span><span style="font-family:Orbitron,monospace;font-size:0.7rem;font-weight:700;flex:1">'+(last?last.userName:"User #"+uid)+'</span>'+(ur?'<span style="padding:1px 6px;background:#ef4444;border-radius:10px;font-size:0.6rem;color:#fff">'+ur+'</span>':'')+'</div><div style="font-size:0.8rem;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(last?last.text.substring(0,40):"No messages")+'</div></div>';}).join("");}
 function openChat(uid){activeChatUser=uid;const msgs=chatConvos[uid]||[];document.getElementById("admin-chat-input").disabled=false;document.getElementById("admin-chat-input").placeholder="Type a reply...";if(adminSocket)adminSocket.emit("mark_read",{userId:uid});msgs.forEach(m=>m.read=true);const nm=msgs[msgs.length-1]?.userName||"User #"+uid;const on=onlineUsrs.has(String(uid));document.getElementById("admin-chat-header").innerHTML='<span style="width:10px;height:10px;border-radius:50%;background:'+(on?"#22c55e":"#94a3b8")+';display:inline-block;margin-right:8px"></span><strong style="font-family:Orbitron,monospace;font-size:0.8rem">'+nm+'</strong><span style="font-family:monospace;font-size:0.65rem;color:'+(on?"#22c55e":"#94a3b8")+';margin-left:8px">'+(on?"ONLINE":"OFFLINE")+'</span>';const c=document.getElementById("admin-chat-msgs");c.innerHTML="";msgs.forEach(m=>appendAdminMsg(m,false));c.scrollTop=c.scrollHeight;renderChatList();const tot=Object.values(chatConvos).reduce((a,ms)=>a+ms.filter(m=>!m.read&&m.from!=="admin").length,0);const b=document.getElementById("chat-nav-count");if(tot>0){b.style.display="flex";b.textContent=tot;}else b.style.display="none";}
 function appendAdminMsg(msg,scroll=true){const c=document.getElementById("admin-chat-msgs");const iu=msg.from!=="admin";const t=new Date(msg.time).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});const d=document.createElement("div");d.style.cssText="display:flex;flex-direction:column;max-width:70%;align-self:"+(iu?"flex-start":"flex-end")+";align-items:"+(iu?"flex-start":"flex-end");d.innerHTML='<div style="padding:9px 13px;border-radius:12px;font-size:0.88rem;'+(iu?"background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.15);color:#f0f9ff;border-bottom-left-radius:2px":"background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#010208;border-bottom-right-radius:2px")+'">'+msg.text+'</div><div style="font-family:monospace;font-size:0.55rem;color:#94a3b8;margin-top:2px">'+(iu?(msg.userName||"User")+" · ":"You · ")+t+'</div>';c.appendChild(d);if(scroll)c.scrollTop=c.scrollHeight;}
 function adminSendMsg(){if(!activeChatUser||!adminSocket)return;const inp=document.getElementById("admin-chat-input");const txt=inp.value.trim();if(!txt)return;adminSocket.emit("admin_message",{userId:activeChatUser,text:txt});inp.value="";}
 </script>
-<script src="/socket.io/socket.io.js"></script><script>window.addEventListener("load",function(){setTimeout(initAdminChat,800);});</script>
+<script src="/socket.io/socket.io.js"></script><script>window.addEventListener("load",function(){setTimeout(initAdminChat,800);});
+// ── VISITOR TRACKING ─────────────────────────────────────────
+var _soundOn = true;
+var _visitorCount = 0;
+var _visitorLog = [];
+var _audioCtx = null;
+
+function toggleSound() {
+  _soundOn = !_soundOn;
+  document.getElementById('sound-icon').textContent = _soundOn ? '🔔' : '🔕';
+  document.getElementById('sound-label').textContent = _soundOn ? 'SOUND ON' : 'SOUND OFF';
+  document.getElementById('sound-toggle').style.borderColor = _soundOn ? 'rgba(14,165,233,0.2)' : 'rgba(148,163,184,0.2)';
+  document.getElementById('sound-toggle').style.color = _soundOn ? '#38bdf8' : '#94a3b8';
+}
+
+function playVisitorSound() {
+  if (!_soundOn) return;
+  try {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = _audioCtx.createOscillator();
+    const gain = _audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(_audioCtx.destination);
+    osc.frequency.setValueAtTime(800, _audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200, _audioCtx.currentTime + 0.1);
+    osc.frequency.exponentialRampToValueAtTime(600, _audioCtx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.3, _audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, _audioCtx.currentTime + 0.4);
+    osc.start(_audioCtx.currentTime);
+    osc.stop(_audioCtx.currentTime + 0.4);
+  } catch(e) {}
+}
+
+function getCountryFlag(countryCode) {
+  if (!countryCode || countryCode === 'XX') return '🌍';
+  const base = 0x1F1E6;
+  const chars = countryCode.toUpperCase().split('').map(c => String.fromCodePoint(base + c.charCodeAt(0) - 65));
+  return chars.join('');
+}
+
+function showVisitorPopup(data) {
+  const popup = document.getElementById('visitor-popup');
+  document.getElementById('visitor-flag').textContent = data.flag;
+  document.getElementById('visitor-info').textContent = (data.city || 'Unknown') + ', ' + (data.country || 'Unknown') + ' · ' + data.ip;
+  document.getElementById('visitor-time').textContent = new Date().toLocaleTimeString();
+  popup.style.display = 'block';
+  setTimeout(() => { popup.style.display = 'none'; }, 6000);
+}
+
+function updateVisitorLog(data) {
+  _visitorLog.unshift(data);
+  if (_visitorLog.length > 50) _visitorLog.pop();
+  const log = document.getElementById('visitor-log');
+  if (!log) return;
+  log.innerHTML = _visitorLog.map(v => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(14,165,233,0.06)">
+      <span style="font-size:20px">${v.flag}</span>
+      <div style="flex:1">
+        <div style="font-size:12px;color:#f0f9ff;font-family:monospace">${v.city || 'Unknown'}, ${v.country || 'Unknown'}</div>
+        <div style="font-size:10px;color:#94a3b8;font-family:monospace">${v.ip} · ${v.page || '/'} · ${v.time}</div>
+      </div>
+      <div style="font-size:10px;color:#38bdf8;font-family:monospace">${v.isp || ''}</div>
+    </div>
+  `).join('');
+}
+
+async function trackVisitor(ip, page) {
+  try {
+    const res = await fetch('https://ipapi.co/' + ip + '/json/');
+    const data = await res.json();
+    const visitorData = {
+      ip: ip,
+      country: data.country_name || 'Unknown',
+      countryCode: data.country_code || 'XX',
+      city: data.city || 'Unknown',
+      region: data.region || '',
+      isp: data.org || '',
+      flag: getCountryFlag(data.country_code),
+      page: page || '/',
+      time: new Date().toLocaleTimeString()
+    };
+    _visitorCount++;
+    document.getElementById('visitor-count').textContent = _visitorCount;
+    showVisitorPopup(visitorData);
+    updateVisitorLog(visitorData);
+    playVisitorSound();
+    return visitorData;
+  } catch(e) {
+    console.log('Visitor tracking error:', e.message);
+  }
+}
+
+// Add style for animations
+const vstyle = document.createElement('style');
+vstyle.textContent = '@keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}';
+document.head.appendChild(vstyle);
+</script>
 </body></html>
