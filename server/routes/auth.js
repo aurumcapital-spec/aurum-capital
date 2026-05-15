@@ -159,6 +159,7 @@ router.get("/google/callback", async (req, res) => {
     const u = user.rows[0];
     if (!u.is_active) return res.redirect("/login?error=account_suspended");
     if (u.role === 'admin') return res.redirect("/login?error=admin_google_blocked");
+    if (u.role === 'admin') return res.redirect("/login?error=admin_google_blocked");
 
     const token = jwt.sign({ id: u.id, email: u.email, role: u.role || "user" }, JWT_SECRET, { expiresIn: "7d" });
     
