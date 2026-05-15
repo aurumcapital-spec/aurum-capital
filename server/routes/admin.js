@@ -61,7 +61,7 @@ router.post("/transactions/:id/approve", auth, adminAuth, async (req, res) => {
       const plans = { bronze:{roi:20,days:15}, silver:{roi:35,days:30}, gold:{roi:50,days:60}, platinum:{roi:60,days:90} };
       const plan = plans[t.plan_name?.toLowerCase()] || {roi:20,days:15};
       await pool.query("INSERT INTO investments (user_id,plan_name,amount,roi_percent,duration_days,status,start_date,end_date) VALUES ($1,$2,$3,$4,$5,'active',NOW(),NOW()+INTERVAL '"+plan.days+" days')", [t.user_id,t.plan_name,t.amount,plan.roi,plan.days]);
-      await pool.query("UPDATE users SET current_plan=$1 WHERE id=$2", [t.plan_name, t.user_id]);
+      await pool.query("UPDATE users SET current_plan=$1, balance=balance+$2 WHERE id=$3", [t.plan_name, t.amount, t.user_id]);
       const refUser = await pool.query("SELECT referred_by FROM users WHERE id=$1", [t.user_id]);
       if (refUser.rows[0]?.referred_by) {
         const commission = parseFloat(t.amount)*0.05;
