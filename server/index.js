@@ -125,14 +125,33 @@ app.get("/ref/:code", (req, res) => {
 });
 app.get("/health", (req,res) => res.json({ status:"ok" }));
 
-// Visitor tracking endpoint
+// Visitor tracking - store in memory + emit to admins
+const recentVisitors = [];
 app.post("/api/visitor", (req, res) => {
-  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.connection.remoteAddress || 'unknown';
-  const page = req.body.page || '/';
-  const ua = req.headers['user-agent'] || '';
-  // Emit to all connected admins
-  io.to("admins").emit("new_visitor", { ip, page, ua, time: new Date().toISOString() });
-  res.json({ ok: true });
+  try {
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 
+               req.socket.remoteAddress || 'unknown';
+    const page = req.body?.page || '/';
+    const ua = req.headers['user-agent'] || '';
+    const visit = { ip, page, ua, time: new Date().toISOString() };
+    recentVisitors.unshift(visit);
+    if (recentVisitors.length > 100) recentVisitors.pop();
+    // Emit to all connected admins via socket
+    io.to("admins").emit("new_visitor", visit);
+    res.json({ ok: true });
+  } catch(e) { res.json({ ok: false }); }
+});
+
+// Admin can poll recent visitors
+app.get("/api/admin/visitors", (req, res) => {
+  const auth = req.headers.authorization;
+  if (!auth) return res.status(401).json({ message: "Unauthorized" });
+  try {
+    const jwt = require("jsonwebtoken");
+    const user = jwt.verify(auth.split(" ")[1], process.env.JWT_SECRET || "nexvault_secret_2026");
+    if (user.role !== "admin") return res.status(403).json({ message: "Forbidden" });
+    res.json({ visitors: recentVisitors });
+  } catch(e) { res.status(401).json({ message: "Invalid token" }); }
 });
 server.listen(PORT, () => console.log("NexVault on port "+PORT));
 // ─── AUTO ROI + INVESTMENT COMPLETION (runs every 24 hours) ───
