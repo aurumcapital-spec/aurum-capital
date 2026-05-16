@@ -46,7 +46,14 @@ router.post("/users/:id/credit", auth, adminAuth, async (req, res) => {
 
 router.get("/transactions", auth, adminAuth, async (req, res) => {
   try {
-    const r = await pool.query("SELECT t.*,u.full_name as user_name,u.email as user_email FROM transactions t JOIN users u ON u.id=t.user_id ORDER BY t.created_at DESC LIMIT 200");
+    const r = await pool.query(`
+      SELECT t.*,u.full_name as user_name,u.email as user_email 
+      FROM transactions t 
+      JOIN users u ON u.id=t.user_id 
+      WHERE t.type IN ('deposit','withdrawal','credit')
+      ORDER BY t.created_at DESC 
+      LIMIT 500
+    `);
     res.json({ transactions: r.rows });
   } catch (err) { res.status(500).json({ message:"Server error" }); }
 });
