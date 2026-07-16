@@ -24,6 +24,8 @@ app.use("/api/transactions", require("./routes/transactions"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/plans", require("./routes/plans"));
 app.use("/api", require("./routes/setup"));
+const chatbotRoute = require("./routes/chatbot");
+app.use("/api/chatbot", chatbotRoute);
 const { pool } = require("./db");
 const onlineAdmins = new Set();
 const onlineUsers = new Map();
