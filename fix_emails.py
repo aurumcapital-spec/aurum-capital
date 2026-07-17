@@ -1,4 +1,6 @@
-const https = require("https");
+import pathlib
+
+content = r'''const https = require("https");
 
 const BASE_URL = process.env.APP_URL || "https://nexvault.org";
 
@@ -440,3 +442,7 @@ const sendTemplate = async (templateName, to, ...args) => {
 };
 
 module.exports = { sendEmail, sendTemplate, templates };
+'''
+
+pathlib.Path('server/utils/email.js').write_text(content, encoding='utf-8')
+print('Done: server/utils/email.js updated')
