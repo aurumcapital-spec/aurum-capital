@@ -248,10 +248,70 @@ tr:hover td{background:rgba(14,165,233,0.03)}
   </div>
 </main>
 <script>
-const API="/api",token=localStorage.getItem("nexvault_token");
-if(!token)window.location.href="/login";
+const API="/api";
+let token=localStorage.getItem("nexvault_token");
+
+// ── ADMIN AUTH GATE ──────────────────────────────────────────
+async function checkAdminAccess(){
+  if(!token){showAdminLoginOverlay();return false;}
+  try{
+    const r=await fetch(API+"/auth/verify",{headers:{Authorization:"Bearer "+token}});
+    const d=await r.json();
+    if(!d.valid||d.user.role!=="admin"){
+      localStorage.removeItem("nexvault_token");
+      showAdminLoginOverlay();
+      return false;
+    }
+    hideAdminLoginOverlay();
+    return true;
+  }catch(e){showAdminLoginOverlay();return false;}
+}
+
+function showAdminLoginOverlay(){
+  document.getElementById("admin-login-overlay").style.display="flex";
+  document.querySelector(".sidebar").style.display="none";
+  document.querySelector(".main").style.display="none";
+}
+
+function hideAdminLoginOverlay(){
+  document.getElementById("admin-login-overlay").style.display="none";
+  document.querySelector(".sidebar").style.display="flex";
+  document.querySelector(".main").style.display="flex";
+}
+
+async function adminLoginSubmit(){
+  const email=document.getElementById("admin-email").value.trim();
+  const password=document.getElementById("admin-password").value;
+  const btn=document.getElementById("admin-login-btn");
+  const err=document.getElementById("admin-login-error");
+  if(!email||!password){err.textContent="Enter email and password.";err.style.display="block";return;}
+  btn.textContent="AUTHENTICATING...";btn.disabled=true;err.style.display="none";
+  try{
+    const r=await fetch(API+"/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password})});
+    const d=await r.json();
+    if(!r.ok){err.textContent=d.message||"Login failed.";err.style.display="block";btn.textContent="ACCESS VAULT";btn.disabled=false;return;}
+    if(d.user&&d.user.role!=="admin"&&!(d.token&&await verifyAdminToken(d.token))){
+      err.textContent="Access denied. Admin credentials required.";err.style.display="block";btn.textContent="ACCESS VAULT";btn.disabled=false;return;
+    }
+    token=d.token;
+    localStorage.setItem("nexvault_token",token);
+    const check=await checkAdminAccess();
+    if(check){window.location.reload();}
+    else{err.textContent="Access denied. Not an admin account.";err.style.display="block";btn.textContent="ACCESS VAULT";btn.disabled=false;}
+  }catch(e){err.textContent="Server error. Try again.";err.style.display="block";btn.textContent="ACCESS VAULT";btn.disabled=false;}
+}
+
+async function verifyAdminToken(t){
+  try{const r=await fetch(API+"/auth/verify",{headers:{Authorization:"Bearer "+t}});const d=await r.json();return d.valid&&d.user.role==="admin";}
+  catch(e){return false;}
+}
+
+document.addEventListener("keydown",function(e){if(e.key==="Enter"&&document.getElementById("admin-login-overlay").style.display!=="none")adminLoginSubmit();});
 let allUsers=[],allDeposits=[],allWithdrawals=[],creditUserId=null,adminSocket=null,activeChatUser=null,chatConvos={},onlineUsrs=new Set();
-window.addEventListener("DOMContentLoaded",()=>{loadOverview();loadUsers();loadTransactionsList();});
+window.addEventListener("DOMContentLoaded",async()=>{
+  const ok=await checkAdminAccess();
+  if(ok){loadOverview();loadUsers();loadTransactionsList();}
+});
 async function apiFetch(p,o={}){const r=await fetch(API+p,{...o,headers:{Authorization:"Bearer "+token,"Content-Type":"application/json",...(o.headers||{})}});return r.json();}
 function showPage(n){document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));["overview","users","deposits","withdrawals","investments","kyc","chat","wallets","settings"].forEach(x=>{const b=document.getElementById("nav-"+x);if(b)b.classList.remove("active");});const pg=document.getElementById("page-"+n);if(pg)pg.classList.add("active");const btn=document.getElementById("nav-"+n);if(btn)btn.classList.add("active");const T={overview:"ADMIN OVERVIEW",users:"USER MANAGEMENT",deposits:"DEPOSIT REQUESTS",withdrawals:"WITHDRAWAL REQUESTS",investments:"ACTIVE INVESTMENTS",kyc:"KYC REVIEW",chat:"LIVE CHAT",wallets:"WALLET ADDRESSES",settings:"SYSTEM SETTINGS"};document.getElementById("page-title").textContent=T[n]||"ADMIN";if(n==="wallets")setTimeout(loadWallets,100);if(n==="chat")document.getElementById("chat-nav-count").style.display="none";}
 function showToast(m,e=false){const t=document.getElementById("toast");t.textContent=(e?"ERR: ":"OK: ")+m;t.className="toast"+(e?" error":"")+" show";setTimeout(()=>t.classList.remove("show"),3000);}
