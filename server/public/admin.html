@@ -84,7 +84,7 @@ tr:hover td{background:rgba(14,165,233,0.03)}
     <div class="modal-btns"><button class="btn btn-cancel" onclick="closeModal()">CANCEL</button><button class="btn btn-gold-full" onclick="submitCredit()">CREDIT BALANCE</button></div>
   </div>
 </div>
-<aside class="sidebar">
+<aside class="sidebar" style="display:none">
   <div class="sidebar-logo"><a href="/" style="text-decoration:none"><div class="logo-text">NEX<span style="color:var(--gold-bright)">VAULT</span></div></a><div class="admin-badge">ADMIN CONSOLE</div></div>
   <nav class="sidebar-nav">
     <div class="nav-label">Control Center</div>
@@ -274,7 +274,8 @@ function showAdminLoginOverlay(){
 }
 
 function hideAdminLoginOverlay(){
-  document.getElementById("admin-login-overlay").style.display="none";
+  const overlay = document.getElementById("admin-login-overlay");
+  if(overlay) overlay.style.display="none";
   document.querySelector(".sidebar").style.display="flex";
   document.querySelector(".main").style.display="flex";
 }
@@ -315,7 +316,12 @@ document.addEventListener("keydown",function(e){if(e.key==="Enter"&&document.get
 let allUsers=[],allDeposits=[],allWithdrawals=[],creditUserId=null,adminSocket=null,activeChatUser=null,chatConvos={},onlineUsrs=new Set();
 window.addEventListener("DOMContentLoaded",async()=>{
   const ok=await checkAdminAccess();
-  if(ok){loadOverview();loadUsers();loadTransactionsList();}
+  if(ok){
+    loadOverview();
+    loadUsers();
+    loadTransactionsList();
+    setTimeout(initAdminChat, 800);
+  }
 });
 async function apiFetch(p,o={}){const r=await fetch(API+p,{...o,headers:{Authorization:"Bearer "+token,"Content-Type":"application/json",...(o.headers||{})}});return r.json();}
 function showPage(n){document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));["overview","users","deposits","withdrawals","investments","kyc","chat","wallets","settings"].forEach(x=>{const b=document.getElementById("nav-"+x);if(b)b.classList.remove("active");});const pg=document.getElementById("page-"+n);if(pg)pg.classList.add("active");const btn=document.getElementById("nav-"+n);if(btn)btn.classList.add("active");const T={overview:"ADMIN OVERVIEW",users:"USER MANAGEMENT",deposits:"DEPOSIT REQUESTS",withdrawals:"WITHDRAWAL REQUESTS",investments:"ACTIVE INVESTMENTS",kyc:"KYC REVIEW",chat:"LIVE CHAT",wallets:"WALLET ADDRESSES",settings:"SYSTEM SETTINGS"};document.getElementById("page-title").textContent=T[n]||"ADMIN";if(n==="wallets")setTimeout(loadWallets,100);if(n==="chat")document.getElementById("chat-nav-count").style.display="none";}
