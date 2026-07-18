@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const { pool } = require("../db");
 const { sendEmail, sendTemplate } = require("../utils/email");
 
-const JWT_SECRET = process.env.JWT_SECRET || "nexvault_secret_2030";
+const JWT_SECRET = process.env.JWT_SECRET || "nexvault_secret_2026";
 
 // REGISTER
 router.post("/register", async (req, res) => {
@@ -34,7 +34,7 @@ router.post("/register", async (req, res) => {
     );
     const user = result.rows[0];
 
-    const token = jwt.sign({ id: user.id, email: user.email, role: "user" }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role || "user" }, JWT_SECRET, { expiresIn: "7d" });
 
     // Welcome email (non-blocking)
     setImmediate(() => {
