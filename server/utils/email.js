@@ -65,7 +65,7 @@ body{margin:0;padding:0;background:#030712;font-family:-apple-system,BlinkMacSys
               &nbsp;&nbsp;&middot;&nbsp;&nbsp;
               <a href="mailto:support@nexvault.org" style="color:#38bdf8;text-decoration:none">support@nexvault.org</a>
               &nbsp;&nbsp;&middot;&nbsp;&nbsp;
-              <a href="https://t.me/nextvaultsupport" style="color:#38bdf8;text-decoration:none">Telegram Support</a>
+              <a href="https://t.me/nexvaultsupport" style="color:#38bdf8;text-decoration:none">Telegram Support</a>
             </div>
           </td>
           <td align="right" class="hide-mobile">
@@ -79,7 +79,7 @@ body{margin:0;padding:0;background:#030712;font-family:-apple-system,BlinkMacSys
       <tr><td style="padding-top:16px">
         <div style="font-size:10px;color:#1e3a5f;line-height:1.8">
           This is an automated secure message from NexVault. Do not reply directly to this email.<br/>
-          For support: <a href="mailto:support@nexvault.org" style="color:#334155">support@nexvault.org</a> or <a href="https://t.me/nextvaultsupport" style="color:#334155">Telegram</a><br/>
+          For support: <a href="mailto:support@nexvault.org" style="color:#334155">support@nexvault.org</a> or <a href="https://t.me/nexvaultsupport" style="color:#334155">Telegram</a><br/>
           &copy; 2026 NexVault. All rights reserved. Investments managed with institutional-grade security.
         </div>
       </td></tr>
@@ -247,7 +247,7 @@ const templates = {
         ["SESSION", "JWT Token Issued", "#cbd5e1"],
         ["STATUS", "&#10003; LOGIN SUCCESSFUL", "#22c55e"],
       ], "#ef4444", "LOGIN DETAILS") +
-      alertBox(`<strong style="color:#f1f5f9">&#9888; Was this you?</strong> If you did not sign in from this IP address, your account may be compromised. Change your password immediately and contact us at <a href="mailto:support@nexvault.org" style="color:#f59e0b">support@nexvault.org</a> or on <a href="https://t.me/nextvaultsupport" style="color:#f59e0b">Telegram</a>.`, "#ef4444") +
+      alertBox(`<strong style="color:#f1f5f9">&#9888; Was this you?</strong> If you did not sign in from this IP address, your account may be compromised. Change your password immediately and contact us at <a href="mailto:support@nexvault.org" style="color:#f59e0b">support@nexvault.org</a> or on <a href="https://t.me/nexvaultsupport" style="color:#f59e0b">Telegram</a>.`, "#ef4444") +
       sectionTitle("SECURITY RECOMMENDATIONS", "#ef4444") +
       checklist([
         "Use a strong, unique password for NexVault",
@@ -325,7 +325,7 @@ const templates = {
         ["PROCESSING TIME", "1 — 24 Hours", "#94a3b8"],
         ["SUPPORT", "support@nexvault.org", "#38bdf8"],
       ], "#22c55e", "WITHDRAWAL DETAILS") +
-      alertBox(`<strong style="color:#f1f5f9">&#8987; Processing times:</strong> Cryptocurrency withdrawals typically arrive within 1-3 hours. If you have not received your funds after 24 hours, please contact our support team at <a href="mailto:support@nexvault.org" style="color:#f59e0b">support@nexvault.org</a> or reach us instantly on <a href="https://t.me/nextvaultsupport" style="color:#f59e0b">Telegram</a>.`) +
+      alertBox(`<strong style="color:#f1f5f9">&#8987; Processing times:</strong> Cryptocurrency withdrawals typically arrive within 1-3 hours. If you have not received your funds after 24 hours, please contact our support team at <a href="mailto:support@nexvault.org" style="color:#f59e0b">support@nexvault.org</a> or reach us instantly on <a href="https://t.me/nexvaultsupport" style="color:#f59e0b">Telegram</a>.`) +
       sectionTitle("AFTER YOUR WITHDRAWAL") +
       checklist([
         "Check your crypto wallet or bank account for the incoming transfer",
@@ -382,7 +382,7 @@ const templates = {
         "For selfie — face and document are both clearly visible together",
         "Do not submit screenshots of photos — use original files only",
       ], "#f59e0b") +
-      alertBox(`&#128172; <strong style="color:#f1f5f9">Need help?</strong> If you are unsure what documents to submit or need assistance with your verification, our support team is available 24/7 at <a href="mailto:support@nexvault.org" style="color:#f59e0b">support@nexvault.org</a> or on <a href="https://t.me/nextvaultsupport" style="color:#f59e0b">Telegram</a>.`, "#ef4444") +
+      alertBox(`&#128172; <strong style="color:#f1f5f9">Need help?</strong> If you are unsure what documents to submit or need assistance with your verification, our support team is available 24/7 at <a href="mailto:support@nexvault.org" style="color:#f59e0b">support@nexvault.org</a> or on <a href="https://t.me/nexvaultsupport" style="color:#f59e0b">Telegram</a>.`, "#ef4444") +
       cta("RESUBMIT MY DOCUMENTS", `${BASE_URL}/dashboard`, "#ef4444")
     )
   }),

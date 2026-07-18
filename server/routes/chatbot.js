@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const TELEGRAM_URL = 'https://t.me/nextvaultsupport';
+const TELEGRAM_URL = 'https://t.me/nexvaultsupport';
 
 const faqs = [
   { keywords: ['minimum','min deposit','least','start investing'], answer: 'The minimum deposit at NexVault is $100 for our Bronze plan. You can start earning 20% ROI in just 15 days.' },

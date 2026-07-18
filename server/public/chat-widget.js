@@ -1,5 +1,5 @@
 (function () {
-  var TELEGRAM_URL = 'https://t.me/nextvaultsupport';
+  var TELEGRAM_URL = 'https://t.me/nexvaultsupport';
   var API_URL = '/api/chatbot/chat';
 
   var css = `
