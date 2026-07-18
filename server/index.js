@@ -120,7 +120,8 @@ app.get("/", (req,res) => res.sendFile(path.join(__dirname,"public","landing.htm
 app.get("/login", (req,res) => res.sendFile(path.join(__dirname,"public","login.html")));
 app.get("/register", (req,res) => res.sendFile(path.join(__dirname,"public","register.html")));
 app.get("/dashboard", (req,res) => res.sendFile(path.join(__dirname,"public","dashboard.html")));
-app.get("/admin", (req,res) => res.sendFile(path.join(__dirname,"public","admin.html")));
+app.get("/admin-login", (req,res) => res.sendFile(path.join(__dirname,"public","admin-login.html")));
+app.get("/admin", (req,res) => res.sendFile(path.join(__dirname,"public","admin.html")));;
 app.use("/auth", require("./routes/auth"));
 app.get("/ref/:code", (req, res) => {
   res.redirect("/register?ref=" + req.params.code);
